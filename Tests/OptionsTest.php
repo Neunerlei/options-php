@@ -599,6 +599,27 @@ class OptionsTest extends TestCase {
 		$this->assertEquals($expected, Options::make($initial, $definition));
 	}
 	
+	public function testSequentialChildrenNonArrayFail() {
+		$this->expectException(OptionValidationException::class);
+		Options::make([
+			"options" => [
+				[
+					"foo" => TRUE,
+				],
+				"",
+			],
+		], [
+			"options" => [
+				"type"     => "array",
+				"children" => [
+					"*" => [
+						"foo" => TRUE,
+					],
+				],
+			],
+		]);
+	}
+	
 	public function testSingleOptionApplication() {
 		$this->assertEquals("string", Options::makeSingle("myParam", NULL, ["default" => "string"]));
 		$this->assertEquals("123", Options::makeSingle("myParam", "123", ["default" => "string"]));

@@ -197,6 +197,16 @@ class OptionApplier {
 				if (isset($def["children"]["*"]) && is_array($def["children"]["*"])) {
 					$vFiltered = [];
 					foreach ($v as $_k => $_v) {
+						// Check if the child is an array before trying to nest the applier
+						if (!is_array($_v)) {
+							$path = $context->path;
+							$path[] = $k;
+							$e = "Invalid child at path: " . implode($path) . " it has to be an array but is instead a: " . gettype($_v);
+							$context->errors[] = new OptionValidationError(OptionValidationError::TYPE_INVALID_CHILD_VALUE, $e, $path);
+							continue;
+						}
+						
+						// Follow the rabbit hole
 						$context->path[] = $_k;
 						$vFiltered[$_k] = $this->applyInternal($context, $_v, $def["children"]["*"]);
 						array_pop($context->path);

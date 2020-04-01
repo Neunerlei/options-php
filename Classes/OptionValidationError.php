@@ -27,6 +27,7 @@ class OptionValidationError {
 	public const TYPE_VALIDATION_FAILED    = 2;
 	public const TYPE_INVALID_VALUE        = 4;
 	public const TYPE_MISSING_REQUIRED_KEY = 16;
+	public const TYPE_INVALID_CHILD_VALUE  = 32;
 	
 	/**
 	 * The type of the validation error
