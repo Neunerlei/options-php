@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.2](https://github.com/Neunerlei/options-php/compare/v1.0.1...v1.0.2) (2020-04-13)
+
+
+### Bug Fixes
+
+* render the correct path when a child validation fails ([f691492](https://github.com/Neunerlei/options-php/commit/f6914928992e96620c72957939a0145a116a4d8b))
+
 ### [1.0.1](https://github.com/Neunerlei/options-php/compare/v1.0.0...v1.0.1) (2020-04-01)
 
 
