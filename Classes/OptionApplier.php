@@ -113,26 +113,34 @@ class OptionApplier {
 		
 		// Apply defaults
 		$popKey = FALSE;
+		$definitionPrepared = [];
 		foreach ($definition as $k => $def) {
-			// Check if we have work to do
-			if (array_key_exists($k, $result)) continue;
-			
-			// Check if this is a boolean flag
-			if ($context->options[static::OPT_ALLOW_BOOLEAN_FLAGS] &&
-				in_array($k, $result) && is_numeric(array_search($k, $result))) {
-				$result[$k] = TRUE;
-				unset($result[array_search($k, $result)]);
-				continue;
-			}
-			
 			// Prepare path
 			if ($popKey) array_pop($context->path);
 			$context->path[] = $k;
 			$popKey = TRUE;
 			
+			// Prepare the definition
+			$definitionPrepared[$k] = $def = $this->prepareDefinition($context, $def);
+			
+			// Check if we have work to do
+			if (array_key_exists($k, $result)) continue;
+			
+			// Check if this is a boolean flag
+			if ($context->options[static::OPT_ALLOW_BOOLEAN_FLAGS] &&
+				in_array($k, $result) && is_numeric(($flagKey = array_search($k, $result)))) {
+				$result[$k] = TRUE;
+				unset($result[$flagKey]);
+				continue;
+			}
+			
 			// Apply the defaults
 			$result = $this->applyDefaultsFor($context, $result, $k, $def);
 		}
+		
+		// Update the definition with the prepared variant
+		$definition = $definitionPrepared;
+		unset($definitionPrepared);
 		
 		// Reset the path
 		$context->path = $initialPath;
@@ -173,26 +181,31 @@ class OptionApplier {
 				continue;
 			}
 			
-			// Prepare the definition
-			$def = $this->prepareDefinition($context, $definition[$k]);
+			// Get the definition
+			$def = $definition[$k];
 			
 			// Apply pre-filter
-			$v = $this->applyPreFilter($context, $k, $v, $def, $result);
+			if (isset($def["preFilter"]))
+				$v = $this->applyPreFilter($context, $k, $v, $def, $result);
 			
 			// Check type-validation
-			if (!$this->checkTypeValidation($context, $v, $def)) continue;
+			if (isset($def["type"]))
+				if (!$this->checkTypeValidation($context, $v, $def)) continue;
 			
 			// Apply filter
-			$v = $this->applyFilter($context, $k, $v, $def, $result);
+			if (isset($def["filter"]))
+				$v = $this->applyFilter($context, $k, $v, $def, $result);
 			
 			// Check custom validation
-			if (!$this->checkCustomValidation($context, $k, $v, $def, $result)) continue;
+			if (isset($def["validator"]))
+				if (!$this->checkCustomValidation($context, $k, $v, $def, $result)) continue;
 			
 			// Check value validation
-			if (!$this->checkValueValidation($context, $v, $def)) continue;
+			if (isset($def["values"]))
+				if (!$this->checkValueValidation($context, $v, $def)) continue;
 			
 			// Handle children
-			if (is_array($v) && isset($def["children"])) {
+			if (isset($def["children"]) && is_array($v)) {
 				// Check if we should handle a list of children
 				if (isset($def["children"]["*"]) && is_array($def["children"]["*"])) {
 					$vFiltered = [];
@@ -213,7 +226,7 @@ class OptionApplier {
 					}
 					$v = $vFiltered;
 				} else {
-					// Handle a associative child definition
+					// Handle as associative child definition
 					$v = $this->applyInternal($context, $v, $def["children"]);
 				}
 			}
@@ -240,9 +253,6 @@ class OptionApplier {
 	 * @return array
 	 */
 	protected function applyDefaultsFor(OptionApplierContext $context, array $list, $k, $def): array {
-		// Prepare the definition
-		$def = $this->prepareDefinition($context, $def);
-		
 		// Check if we have a default value
 		if (!array_key_exists("default", $def)) {
 			$e = "The option key: \"" . implode(".", $context->path) . "\" is required!";
@@ -269,25 +279,16 @@ class OptionApplier {
 	 * @throws \Neunerlei\Options\InvalidOptionDefinitionException
 	 */
 	protected function prepareDefinition(OptionApplierContext $context, $def): array {
-		// Make sure we don't recreate definitions if we iterate a numeric list of recurring elements
-		$cachePath = $context->path;
-		$pathLength = count($context->path);
-		if (isset($cachePath[$pathLength - 2]) && $cachePath[$pathLength - 2] === "*")
-			$cachePath = array_slice($cachePath, 0, $pathLength - 2);
-		$cacheKey = implode(".", $cachePath);
-		
-		// Serve cache value if possible
-		if (isset($context->preparedDefinitions[$cacheKey])) return $context->preparedDefinitions[$cacheKey];
-		
 		// Default simple definition -> The value is the default value
-		if (!is_array($def)) $def = ["default" => $def];
+		$defIsArray = is_array($def);
+		if (!$defIsArray) $def = ["default" => $def];
 		
 		// Array simple definition -> The first value in the array is the default value
-		else if (is_array($def) && count($def) === 1 && is_numeric(key($def)) && is_array(reset($def)))
-			$def = ["default" => reset($def)];
+		else if ($defIsArray && count($def) === 1 && is_numeric(key($def)) && is_array(($firstDef = reset($def))))
+			$def = ["default" => $firstDef];
 		
 		// Failed array simple definition
-		else if (is_array($def) && empty($def))
+		else if ($defIsArray && empty($def))
 			throw new InvalidOptionDefinitionException("Definition error at: \"" . implode(".", $context->path) .
 				"\"; An empty array was given as definition. If you want an array as default value make sure to pass it like: " .
 				"\"key\" => [[]] or like \"key\" => [\"default\" => []]");
@@ -296,13 +297,13 @@ class OptionApplier {
 		if (!empty($def["required"])) unset($def["default"]);
 		
 		// Validate that all keys in the definition are valid
-		if (is_array($def) && count($unknownConfig = array_diff(array_keys($def), static::ALLOWED_DEFINITION_KEYS)) > 0)
+		if (is_array($def) && !empty($unknownConfig = array_diff(array_keys($def), static::ALLOWED_DEFINITION_KEYS)))
 			throw new InvalidOptionDefinitionException(
 				"Definition error at: \"" . implode(".", $context->path) . "\"; found invalid keys: " .
 				implode(", ", $unknownConfig) . " - Make sure to wrap arrays in definitions in an outer array!");
 		
 		// Done
-		return $context->preparedDefinitions[$cacheKey] = $def;
+		return $def;
 	}
 	
 	/**
@@ -318,9 +319,6 @@ class OptionApplier {
 	 * @throws \Neunerlei\Options\InvalidOptionDefinitionException
 	 */
 	protected function applyPreFilter(OptionApplierContext $context, $k, $v, array $def, array $list) {
-		// Ignore if there is nothing to do
-		if (empty($def["preFilter"])) return $v;
-		
 		// Validate config
 		if (!is_callable($def["preFilter"]))
 			throw new InvalidOptionDefinitionException(
@@ -341,23 +339,24 @@ class OptionApplier {
 	 * @throws \Neunerlei\Options\InvalidOptionDefinitionException
 	 */
 	protected function checkTypeValidation(OptionApplierContext $context, $v, array $def): bool {
-		// Skip, if there is no validation required
-		if (empty($def["type"])) return TRUE;
-		
-		// Resolve shorthand
-		if (is_string($def["type"])) $def["type"] = [$def["type"]];
 		
 		// Validate input
-		if (!is_array($def["type"]))
-			throw new InvalidOptionDefinitionException(
-				"Definition error at: \"" . implode(".", $context->path) . "\" - Type definitions have to be an array or a string!");
+		if (!is_array($def["type"])) {
+			// Resolve shorthand
+			if (is_string($def["type"])) $def["type"] = [$def["type"]];
+			else
+				throw new InvalidOptionDefinitionException(
+					"Definition error at: \"" . implode(".", $context->path) . "\" - Type definitions have to be an array of strings, or a single string!");
+		}
 		
 		// Build internal list
-		$typeList = array_unique(array_filter(array_map(function ($type) {
-			$typeLc = trim(strtolower($type));
-			if (isset(static::LIST_TYPE_MAP[$typeLc])) return static::LIST_TYPE_MAP[$typeLc];
+		$typeList = array_flip(array_map(function ($type) use ($context) {
+			if (!is_string($type))
+				throw new InvalidOptionDefinitionException(
+					"Definition error at: \"" . implode(".", $context->path) . "\" - Type definitions have to be an array of strings, or a single string!");
+			if (isset(static::LIST_TYPE_MAP[$type])) return static::LIST_TYPE_MAP[$type];
 			return $type;
-		}, $def["type"])));
+		}, $def["type"]));
 		
 		// Validate the value types
 		if (!$this->validateTypesOf($v, $typeList)) {
@@ -385,9 +384,6 @@ class OptionApplier {
 	 * @throws \Neunerlei\Options\InvalidOptionDefinitionException
 	 */
 	protected function applyFilter(OptionApplierContext $context, $k, $v, array $def, array $list) {
-		// Ignore if there is nothing to do
-		if (empty($def["filter"])) return $v;
-		
 		// Validate config
 		if (!is_callable($def["filter"]))
 			throw new InvalidOptionDefinitionException(
@@ -410,9 +406,6 @@ class OptionApplier {
 	 * @throws \Neunerlei\Options\InvalidOptionDefinitionException
 	 */
 	protected function checkCustomValidation(OptionApplierContext $context, $k, $v, array &$def, array $list): bool {
-		// Skip, if there is no validation required
-		if (empty($def["validator"])) return TRUE;
-		
 		// Check if validator can be called
 		if (!is_callable($def["validator"]))
 			throw new InvalidOptionDefinitionException(
@@ -446,9 +439,6 @@ class OptionApplier {
 	 * @throws \Neunerlei\Options\InvalidOptionDefinitionException
 	 */
 	protected function checkValueValidation(OptionApplierContext $context, $v, array $def): bool {
-		// Ignore if there is nothing to do
-		if (empty($def["values"])) return TRUE;
-		
 		// Validate config
 		if (!is_array($def["values"]))
 			throw new InvalidOptionDefinitionException(
@@ -474,6 +464,7 @@ class OptionApplier {
 	 */
 	protected function stringifyValue($value): string {
 		if (is_string($value) || is_numeric($value)) return (string)$value;
+		if (is_bool($value)) return $value ? "TRUE" : "FALSE";
 		if (is_object($value)) {
 			if (method_exists($value, "__toString")) {
 				$s = (string)$value;
@@ -501,34 +492,33 @@ class OptionApplier {
 		$type = static::LIST_TYPE_MAP[$typeString];
 		
 		// Simple lookup
-		if (in_array($type, $types)) return TRUE;
+		if (isset($types[$type])) return TRUE;
 		
 		// Object lookup
 		if ($type === static::TYPE_OBJECT) {
-			if (in_array(get_class($value), $types)) return TRUE;
-			if (count(array_intersect(class_parents($value), array_values($types))) > 0) return TRUE;
-			if (count(array_intersect(class_implements($value), array_values($types))) > 0) return TRUE;
+			if (isset($types[get_class($value)])) return TRUE;
+			if (!empty(array_intersect(class_parents($value), array_keys($types)))) return TRUE;
+			if (!empty(array_intersect(class_implements($value), array_keys($types)))) return TRUE;
 			
 			// Closure callable lookup
-			if (in_array(static::TYPE_CALLABLE, $types) && $value instanceof Closure) return TRUE;
+			if (isset($types[static::TYPE_CALLABLE]) && $value instanceof Closure) return TRUE;
 			return FALSE;
 		}
 		
 		// Boolean lookup
 		if ($type === static::TYPE_BOOL) {
-			if (in_array(static::TYPE_BOOL, $types)) return TRUE;
-			if ($value === TRUE && in_array(static::TYPE_TRUE, $types)) return TRUE;
-			else if (in_array(static::TYPE_FALSE, $types)) return TRUE;
+			if ($value === TRUE && isset($types[static::TYPE_TRUE])) return TRUE;
+			else if (isset($types[static::TYPE_FALSE])) return TRUE;
 		}
 		
-		// Numeric lookup
-		if (is_numeric($value) && in_array(static::TYPE_NUMERIC, $types)) return TRUE;
-		
 		// Number lookup (Non-string)
-		if ($type === static::TYPE_INT || $type === static::TYPE_FLOAT && in_array(static::TYPE_NUMBER, $types)) return TRUE;
+		if (($type === static::TYPE_INT || $type === static::TYPE_FLOAT) && isset($types[static::TYPE_NUMBER])) return TRUE;
+		
+		// Numeric lookup (Potential String)
+		if (isset($types[static::TYPE_NUMERIC]) && is_numeric($value)) return TRUE;
 		
 		// Callable lookup
-		if (is_callable($value) && in_array(static::TYPE_CALLABLE, $types)) return TRUE;
+		if (isset($types[static::TYPE_CALLABLE]) && is_callable($value)) return TRUE;
 		
 		// Nope...
 		return FALSE;

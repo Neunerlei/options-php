@@ -38,10 +38,4 @@ class OptionApplierContext {
 	 * @var array
 	 */
 	public $options;
-	
-	/**
-	 * Local cache to avoid duplicate definition generation
-	 * @var array
-	 */
-	public $preparedDefinitions = [];
 }

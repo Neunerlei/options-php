@@ -168,7 +168,7 @@ class OptionsTest extends TestCase {
 			],
 			[
 				"types"                 => ["float", "double"],
-				"data"                  => [123.23, 546345.12325, 12123.123, 56456.1, 1230.45, 0],
+				"data"                  => [123.23, 546345.12325, 12123.123, 56456.1, 1230.45, 0.0],
 				"ignoredForInvalidData" => ["numeric", "number"],
 			],
 			[
