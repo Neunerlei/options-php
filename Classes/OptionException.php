@@ -20,6 +20,7 @@
 namespace Neunerlei\Options;
 
 
-class OptionException extends \Exception {
-	
+class OptionException extends \Exception
+{
+
 }

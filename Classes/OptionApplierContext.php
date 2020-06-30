@@ -20,22 +20,26 @@
 namespace Neunerlei\Options;
 
 
-class OptionApplierContext {
-	/**
-	 * The list of errors that occurred while running the applier
-	 * @var \Neunerlei\Options\OptionValidationError[]
-	 */
-	public $errors = [];
-	
-	/**
-	 * Defines the path through the given input array
-	 * @var array
-	 */
-	public $path = [];
-	
-	/**
-	 * The given list of options from the outside world
-	 * @var array
-	 */
-	public $options;
+class OptionApplierContext
+{
+    /**
+     * The list of errors that occurred while running the applier
+     *
+     * @var \Neunerlei\Options\OptionValidationError[]
+     */
+    public $errors = [];
+    
+    /**
+     * Defines the path through the given input array
+     *
+     * @var array
+     */
+    public $path = [];
+    
+    /**
+     * The given list of options from the outside world
+     *
+     * @var array
+     */
+    public $options;
 }

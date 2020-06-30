@@ -20,32 +20,38 @@
 namespace Neunerlei\Options;
 
 
-class OptionValidationException extends OptionException {
-	
-	/**
-	 * The list of errors that lead to this exception
-	 * @var \Neunerlei\Options\OptionValidationError[]
-	 */
-	protected $errors;
-	
-	/**
-	 * OptionValidationException constructor.
-	 *
-	 * @param \Neunerlei\Options\OptionValidationError[] $errors
-	 */
-	public function __construct(array $errors) {
-		$this->errors = $errors;
-		$message = "Errors while validating options: ";
-		foreach ($errors as $error)
-			$message .= PHP_EOL . " -" . $error->getMessage();
-		parent::__construct($message);
-	}
-	
-	/**
-	 * Returns the list of errors that lead to this exception
-	 * @return \Neunerlei\Options\OptionValidationError[]
-	 */
-	public function getErrors(): array {
-		return $this->errors;
-	}
+class OptionValidationException extends OptionException
+{
+    
+    /**
+     * The list of errors that lead to this exception
+     *
+     * @var \Neunerlei\Options\OptionValidationError[]
+     */
+    protected $errors;
+    
+    /**
+     * OptionValidationException constructor.
+     *
+     * @param   \Neunerlei\Options\OptionValidationError[]  $errors
+     */
+    public function __construct(array $errors)
+    {
+        $this->errors = $errors;
+        $message      = "Errors while validating options: ";
+        foreach ($errors as $error) {
+            $message .= PHP_EOL . " -" . $error->getMessage();
+        }
+        parent::__construct($message);
+    }
+    
+    /**
+     * Returns the list of errors that lead to this exception
+     *
+     * @return \Neunerlei\Options\OptionValidationError[]
+     */
+    public function getErrors(): array
+    {
+        return $this->errors;
+    }
 }

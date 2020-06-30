@@ -19,6 +19,7 @@
 
 namespace Neunerlei\Options;
 
-class InvalidOptionDefinitionException extends OptionException {
-	
+class InvalidOptionDefinitionException extends OptionException
+{
+
 }

@@ -21,15 +21,19 @@ namespace Neunerlei\Options\Tests\Assets;
 use Neunerlei\Options\OptionApplier;
 
 
-class DummyExtendedApplier extends OptionApplier {
+class DummyExtendedApplier extends OptionApplier
+{
 }
 
-class DummyClassA {
-	public static function foo() { }
+class DummyClassA
+{
+    public static function foo() { }
 }
 
-interface DummyInterfaceA {
+interface DummyInterfaceA
+{
 }
 
-class DummyExtendedClassA extends DummyClassA implements DummyInterfaceA {
+class DummyExtendedClassA extends DummyClassA implements DummyInterfaceA
+{
 }
