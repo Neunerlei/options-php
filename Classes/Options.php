@@ -168,8 +168,6 @@ class Options
      *                           flags in your input array. Useful when validating API inputs
      *
      * @return array
-     * @throws InvalidOptionDefinitionException
-     * @throws OptionValidationException
      */
     public static function make(array $input, array $definition, array $options = []): array
     {

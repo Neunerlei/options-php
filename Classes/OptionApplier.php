@@ -95,10 +95,10 @@ class OptionApplier
             static::OPT_IGNORE_UNKNOWN      => false,
             static::OPT_ALLOW_BOOLEAN_FLAGS => true,
         ];
-        if (! empty($options["allowUnknown"]) || in_array("allowUnknown", $options)) {
+        if (! empty($options["allowUnknown"]) || in_array("allowUnknown", $options, true)) {
             $context->options[static::OPT_ALLOW_UNKNOWN] = true;
         }
-        if (! empty($options["ignoreUnknown"]) || in_array("ignoreUnknown", $options)) {
+        if (! empty($options["ignoreUnknown"]) || in_array("ignoreUnknown", $options, true)) {
             $context->options[static::OPT_IGNORE_UNKNOWN] = true;
         }
         if (isset($options["allowBooleanFlags"]) && $options["allowBooleanFlags"] === false) {
@@ -151,9 +151,9 @@ class OptionApplier
             }
             
             // Check if this is a boolean flag
-            if ($context->options[static::OPT_ALLOW_BOOLEAN_FLAGS] && in_array($k, $result)
+            if ($context->options[static::OPT_ALLOW_BOOLEAN_FLAGS] && in_array($k, $result, true)
                 && is_numeric(($flagKey
-                    = array_search($k, $result)))) {
+                    = array_search($k, $result, true)))) {
                 $result[$k] = true;
                 unset($result[$flagKey]);
                 continue;
@@ -222,10 +222,8 @@ class OptionApplier
             }
             
             // Check type-validation
-            if (isset($def["type"])) {
-                if (! $this->checkTypeValidation($context, $v, $def)) {
-                    continue;
-                }
+            if (isset($def["type"]) && ! $this->checkTypeValidation($context, $v, $def)) {
+                continue;
             }
             
             // Apply filter
@@ -234,23 +232,20 @@ class OptionApplier
             }
             
             // Check custom validation
-            if (isset($def["validator"])) {
-                if (! $this->checkCustomValidation($context, $k, $v, $def, $result)) {
-                    continue;
-                }
+            if (isset($def["validator"])
+                && ! $this->checkCustomValidation($context, $k, $v, $def, $result)) {
+                continue;
             }
             
             // Check value validation
-            if (isset($def["values"])) {
-                if (! $this->checkValueValidation($context, $v, $def)) {
-                    continue;
-                }
+            if (isset($def["values"]) && ! $this->checkValueValidation($context, $v, $def)) {
+                continue;
             }
             
             // Handle children
             if (isset($def["children"]) && is_array($v)) {
                 // Check if we should handle a list of children
-                if (isset($def["children"]["*"]) && is_array($def["children"]["*"])) {
+                if (! isset($def["children"]["*"]) || ! is_array($def["children"]["*"])) {
                     $vFiltered = [];
                     foreach ($v as $_k => $_v) {
                         // Check if the child is an array before trying to nest the applier
@@ -411,17 +406,14 @@ class OptionApplier
         }
         
         // Build internal list
-        $typeList = array_flip(array_map(function ($type) use ($context) {
+        $typeList = array_flip(array_map(static function ($type) use ($context) {
             if (! is_string($type)) {
                 throw new InvalidOptionDefinitionException(
                     "Definition error at: \"" . implode(".", $context->path)
                     . "\" - Type definitions have to be an array of strings, or a single string!");
             }
-            if (isset(static::LIST_TYPE_MAP[$type])) {
-                return static::LIST_TYPE_MAP[$type];
-            }
             
-            return $type;
+            return static::LIST_TYPE_MAP[$type] ?? $type;
         }, $def["type"]));
         
         // Validate the value types
@@ -624,7 +616,9 @@ class OptionApplier
         if ($type === static::TYPE_BOOL) {
             if ($value === true && isset($types[static::TYPE_TRUE])) {
                 return true;
-            } elseif (isset($types[static::TYPE_FALSE])) {
+            }
+            
+            if (isset($types[static::TYPE_FALSE])) {
                 return true;
             }
         }
@@ -656,7 +650,7 @@ class OptionApplier
      *
      * @return string|null The best matching key or null if the given haystack was empty
      */
-    protected function getSimilarKey(array $haystack, string $needle)
+    protected function getSimilarKey(array $haystack, string $needle): ?string
     {
         // Check if the needle exists
         if (isset($haystack[$needle])) {

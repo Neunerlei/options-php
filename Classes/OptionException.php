@@ -22,7 +22,9 @@ declare(strict_types=1);
 namespace Neunerlei\Options;
 
 
-class OptionException extends \Exception
+use Exception;
+
+class OptionException extends Exception
 {
 
 }
