@@ -17,6 +17,8 @@
  * Last modified: 2020.02.28 at 20:22
  */
 
+declare(strict_types=1);
+
 namespace Neunerlei\Options;
 
 

@@ -17,6 +17,8 @@
  * Last modified: 2020.02.27 at 10:57
  */
 
+declare(strict_types=1);
+
 namespace Neunerlei\Options;
 
 class InvalidOptionDefinitionException extends OptionException
