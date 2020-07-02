@@ -245,7 +245,7 @@ class OptionApplier
             // Handle children
             if (isset($def["children"]) && is_array($v)) {
                 // Check if we should handle a list of children
-                if (! isset($def["children"]["*"]) || ! is_array($def["children"]["*"])) {
+                if (isset($def["children"]["*"]) && is_array($def["children"]["*"])) {
                     $vFiltered = [];
                     foreach ($v as $_k => $_v) {
                         // Check if the child is an array before trying to nest the applier
