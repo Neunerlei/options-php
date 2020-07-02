@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/Neunerlei/options-php/compare/v1.0.3...v1.1.0) (2020-07-02)
+
+
+### Features
+
+* make code PSR-2 compliant ([669d271](https://github.com/Neunerlei/options-php/commit/669d27151b3b81e52acfae188d15fb16638a863a))
+* update to PSR-2 code style ([356ced4](https://github.com/Neunerlei/options-php/commit/356ced439f4095c79e0842e26a0a94ec332a1e64))
+
+
+### Bug Fixes
+
+* fix code style and type issues ([1b1a114](https://github.com/Neunerlei/options-php/commit/1b1a11410042d08fdb1ad38525f0ac17faea11c4))
+* handle nested children correctly ([72a36f3](https://github.com/Neunerlei/options-php/commit/72a36f3dfff90683ad6c2e1561c66e19a7ae5c7a))
+
 ### [1.0.3](https://github.com/Neunerlei/options-php/compare/v1.0.2...v1.0.3) (2020-05-23)
 
 
