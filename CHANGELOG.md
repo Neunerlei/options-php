@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/Neunerlei/options-php/compare/v1.1.0...v1.2.0) (2021-06-09)
+
+
+### Features
+
+* update dependencies ([a7e4dd5](https://github.com/Neunerlei/options-php/commit/a7e4dd55c04f8fc3f4511941bf94dab7447b939a))
+
+
+### Bug Fixes
+
+* make sure boolean flags are handled correctly ([baad08b](https://github.com/Neunerlei/options-php/commit/baad08b1522ca4e38fc6ab618afbc315bb1e60f4))
+* remove vendor directory from git ([902a18f](https://github.com/Neunerlei/options-php/commit/902a18f5bf181954b6e231a7eb3ea936e1121e0d))
+
 ## [1.1.0](https://github.com/Neunerlei/options-php/compare/v1.0.3...v1.1.0) (2020-07-02)
 
 
