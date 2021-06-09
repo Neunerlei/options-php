@@ -2,6 +2,7 @@
 .DS_Store
 .env
 vendor
+.phpunit.result.cache
 
 # IDEA Code Style
 .idea/*

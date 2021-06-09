@@ -145,17 +145,16 @@ class OptionApplier
             // Prepare the definition
             $definitionPrepared[$k] = $def = $this->prepareDefinition($context, $def);
 
-            // Check if we have work to do
-            if (array_key_exists($k, $result)) {
+            // Check if this is a boolean flag
+            if ($context->options[static::OPT_ALLOW_BOOLEAN_FLAGS] && in_array($k, $result, true)
+                && is_numeric(($flagKey = array_search($k, $result, true)))) {
+                $result[$k] = $result[$k] ?? true;
+                unset($result[$flagKey]);
                 continue;
             }
 
-            // Check if this is a boolean flag
-            if ($context->options[static::OPT_ALLOW_BOOLEAN_FLAGS] && in_array($k, $result, true)
-                && is_numeric(($flagKey
-                    = array_search($k, $result, true)))) {
-                $result[$k] = true;
-                unset($result[$flagKey]);
+            // Check if we have work to do
+            if (array_key_exists($k, $result)) {
                 continue;
             }
 
@@ -200,6 +199,7 @@ class OptionApplier
                     $lastPathPart   = array_pop($readablePath);
                     $readablePath[] = $v . ' (' . $lastPathPart . ')';
                     $k              = $v;
+                    dbge($result, $k, $definition);
                 }
 
                 // Handle not found key

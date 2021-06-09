@@ -148,17 +148,24 @@ class OptionsTest extends TestCase
 
     public function testBooleanFlags()
     {
-        self::assertEquals(['foo' => true], Options::make(['foo'], ['foo' => ['type' => 'bool', 'default' => false]]));
-        self::assertEquals(['foo' => false], Options::make([], ['foo' => ['type' => 'bool', 'default' => false]]));
+        $flagDefinition = ['foo' => ['type' => 'bool', 'default' => false]];
+        self::assertEquals(['foo' => true], Options::make(['foo'], $flagDefinition));
+        self::assertEquals(['foo' => false], Options::make([], $flagDefinition));
 
         // Fail if boolean flags are disabled
         try {
-            Options::make(['foo'], ['foo' => ['type' => 'bool', 'default' => false]], ['allowBooleanFlags' => false]);
+            Options::make(['foo'], $flagDefinition, ['allowBooleanFlags' => false]);
             self::fail('Did not fail when boolean flags were disabled!');
         } catch (OptionValidationException $e) {
             self::assertInstanceOf(OptionValidationException::class, $e);
             self::assertStringContainsString('-Invalid option key: "0" given!', $e->getMessage());
         }
+
+        // Test if flags and direct definitions are handled correctly
+        self::assertEquals(['foo' => true], Options::make(['foo', 'foo' => true], $flagDefinition));
+
+        // The direct definition has priority over the flag value
+        self::assertEquals(['foo' => false], Options::make(['foo', 'foo' => false], $flagDefinition));
     }
 
     public function testSingleTypeValidation()
