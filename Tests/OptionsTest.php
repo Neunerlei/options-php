@@ -31,27 +31,28 @@ use Neunerlei\Options\Tests\Assets\DummyExtendedApplier;
 use Neunerlei\Options\Tests\Assets\DummyExtendedClassA;
 use Neunerlei\Options\Tests\Assets\DummyInterfaceA;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class OptionsTest extends TestCase
 {
-    
+
     public function testApplierGeneration()
     {
-        $ref = new \ReflectionClass(Options::class);
+        $ref = new ReflectionClass(Options::class);
         $this->assertEquals(OptionApplier::class, Options::$applierClass);
-        
+
         // Test default applier instantiation
         Options::make([], []);
         $props   = $ref->getStaticProperties();
         $applier = $props["applier"];
         $this->assertInstanceOf(OptionApplier::class, $props["applier"]);
-        
+
         // Test if singleton works
         Options::make([], []);
         $props    = $ref->getStaticProperties();
         $applier2 = $props["applier"];
         $this->assertSame($applier, $applier2);
-        
+
         // Check if the class can be overwritten and will automatically update the instance
         Options::$applierClass = DummyExtendedApplier::class;
         Options::make([], []);
@@ -62,7 +63,7 @@ class OptionsTest extends TestCase
         $this->assertNotSame($applier, $applier3);
         Options::$applierClass = OptionApplier::class;
     }
-    
+
     public function testDefaultValue()
     {
         // Simple default value
@@ -74,23 +75,23 @@ class OptionsTest extends TestCase
                 $this->assertArrayHasKey("default", $definition);
                 $this->assertIsCallable($definition["default"]);
                 $this->assertEquals(["foo"], $path);
-                
+
                 return 123123;
             },
         ]));
         $this->assertEquals(["foo" => 123], Options::make([], ["foo" => 123]));
         $this->assertEquals(["foo" => 123, "bar" => "baz"], Options::make([], ["foo" => 123, "bar" => "baz"]));
-        
+
         // Complex default
         $this->assertEquals(["foo" => true], Options::make([], ["foo" => ["default" => true]]));
         $this->assertEquals(["foo" => 123], Options::make([], ["foo" => ["default" => 123]]));
         $this->assertEquals(["foo" => 123, "bar" => "baz"],
             Options::make([], ["foo" => ["default" => 123], "bar" => ["default" => "baz"]]));
-        
+
         // Check if simple array definition works
         $this->assertEquals(["foo" => []], Options::make([], ["foo" => [[]]]));
         $this->assertEquals(["foo" => ["foo" => "bar"]], Options::make([], ["foo" => [["foo" => "bar"]]]));
-        
+
         // Check if invalid array default definition fails
         try {
             Options::make([], ["foo" => []]);
@@ -100,9 +101,9 @@ class OptionsTest extends TestCase
             $this->assertStringContainsString("Definition error at: \"foo\"; An empty array was given as definition.",
                 $e->getMessage());
         }
-        
+
     }
-    
+
     public function testMissingRequiredValue()
     {
         // Check if missing required value fails
@@ -113,7 +114,7 @@ class OptionsTest extends TestCase
             $this->assertInstanceOf(OptionValidationException::class, $e);
             $this->assertStringContainsString("-The option key: \"foo\" is required!", $e->getMessage());
         }
-        
+
         // Check if the "required" pseudo option works
         try {
             Options::make([], ["foo" => ["required" => true, "default" => null]]);
@@ -123,7 +124,7 @@ class OptionsTest extends TestCase
             $this->assertStringContainsString("-The option key: \"foo\" is required!", $e->getMessage());
         }
     }
-    
+
     public function testUnknownKeyValidation()
     {
         // Check if an unknown key fails
@@ -134,22 +135,22 @@ class OptionsTest extends TestCase
             $this->assertInstanceOf(OptionValidationException::class, $e);
             $this->assertStringContainsString("-Invalid option key: \"bar\" given!", $e->getMessage());
         }
-        
+
         // Check if an unknown key can be allowed
         $v = Options::make(["bar" => 123], ["foo" => true], ["allowUnknown"]);
         $this->assertEquals(["bar" => 123, "foo" => true], $v);
-        
+
         // Check if an unknown key can be ignored
         $v = Options::make(["bar" => 123], ["foo" => true], ["ignoreUnknown"]);
         $this->assertEquals(["foo" => true], $v);
-        
+
     }
-    
+
     public function testBooleanFlags()
     {
         $this->assertEquals(["foo" => true], Options::make(["foo"], ["foo" => ["type" => "bool", "default" => false]]));
         $this->assertEquals(["foo" => false], Options::make([], ["foo" => ["type" => "bool", "default" => false]]));
-        
+
         // Fail if boolean flags are disabled
         try {
             Options::make(["foo"], ["foo" => ["type" => "bool", "default" => false]], ["allowBooleanFlags" => false]);
@@ -159,7 +160,7 @@ class OptionsTest extends TestCase
             $this->assertStringContainsString("-Invalid option key: \"0\" given!", $e->getMessage());
         }
     }
-    
+
     public function testSingleTypeValidation()
     {
         // Define test sets
@@ -269,7 +270,7 @@ class OptionsTest extends TestCase
                 "ignoredForInvalidData" => [],
             ],
         ];
-        
+
         // Gather a list of types
         $realSets = [];
         foreach ($sets as $set) {
@@ -277,7 +278,7 @@ class OptionsTest extends TestCase
                 $realSets[$type] = $set;
             }
         }
-        
+
         // Gather invalid data
         foreach ($realSets as $type => $set) {
             // Test all other data as invalid data
@@ -295,14 +296,14 @@ class OptionsTest extends TestCase
             }
             $realSets[$type]["invalidData"] = $invalidData;
         }
-        
+
         // Run tests
         foreach ($realSets as $type => $set) {
             // Test positive results
             foreach ($set["data"] as $val) {
                 $this->assertEquals(["foo" => $val], Options::make(["foo" => $val], ["foo" => ["type" => $type]]));
             }
-            
+
             // Test negative results
             try {
                 foreach ($set["invalidData"] as $val) {
@@ -318,7 +319,7 @@ class OptionsTest extends TestCase
             }
         }
     }
-    
+
     public function testMultiTypeValidation()
     {
         $this->assertEquals(["foo" => "bar"],
@@ -329,7 +330,7 @@ class OptionsTest extends TestCase
         $a = new DummyExtendedClassA();
         $this->assertEquals(["foo" => $a],
             Options::make(["foo" => $a], ["foo" => ["type" => [DummyClassA::class, "bool"]]]));
-        
+
         try {
             $this->assertEquals(["foo" => $a], Options::make(["foo" => $a], ["foo" => ["type" => ["string", "bool"]]]));
             $this->fail("Missing required value did not throw an exception!");
@@ -347,7 +348,7 @@ class OptionsTest extends TestCase
                 $e->getMessage());
         }
     }
-    
+
     public function testDefaultTypeValidation()
     {
         $this->assertEquals(["foo" => true], Options::make([], ["foo" => ["type" => "bool", "default" => true]]));
@@ -360,7 +361,7 @@ class OptionsTest extends TestCase
                 $e->getMessage());
         }
     }
-    
+
     public function testPreFilter()
     {
         $executed = false;
@@ -378,14 +379,14 @@ class OptionsTest extends TestCase
                     $this->assertArrayHasKey("preFilter", $definition);
                     $this->assertIsCallable($definition["preFilter"]);
                     $this->assertEquals(["foo"], $path);
-                    
+
                     return (int)$v;
                 },
             ],
         ]);
         $this->assertTrue($executed);
         $this->assertEquals(["foo" => 123], $v);
-        
+
         // Check validation if invalid callable is given
         try {
             Options::make(["foo" => "123"], ["foo" => ["preFilter" => "notExistingFunction__"]]);
@@ -395,7 +396,7 @@ class OptionsTest extends TestCase
             $this->assertStringContainsString("The preFilter is not callable!", $e->getMessage());
         }
     }
-    
+
     public function testFilter()
     {
         $executed = false;
@@ -413,14 +414,14 @@ class OptionsTest extends TestCase
                     $this->assertArrayHasKey("filter", $definition);
                     $this->assertIsCallable($definition["filter"]);
                     $this->assertEquals(["foo"], $path);
-                    
+
                     return $v;
                 },
             ],
         ]);
         $this->assertTrue($executed);
         $this->assertEquals(["foo" => 123], $v);
-        
+
         // Check validation if invalid callable is given
         try {
             Options::make(["foo" => "123"], ["foo" => ["filter" => "notExistingFunction__"]]);
@@ -430,7 +431,7 @@ class OptionsTest extends TestCase
             $this->assertStringContainsString("The filter is not callable!", $e->getMessage());
         }
     }
-    
+
     public function testValidator()
     {
         $executed = false;
@@ -448,14 +449,14 @@ class OptionsTest extends TestCase
                     $this->assertArrayHasKey("validator", $definition);
                     $this->assertIsCallable($definition["validator"]);
                     $this->assertEquals(["foo"], $path);
-                    
+
                     return true;
                 },
             ],
         ]);
         $this->assertTrue($executed);
         $this->assertEquals(["foo" => 123], $v);
-        
+
         // Check if invalid validator fails
         try {
             Options::make(["foo" => "123"], ["foo" => ["validator" => "notExistingFunction__"]]);
@@ -464,7 +465,7 @@ class OptionsTest extends TestCase
             $this->assertInstanceOf(InvalidOptionDefinitionException::class, $e);
             $this->assertStringContainsString("The validator is not callable!", $e->getMessage());
         }
-        
+
         // Check if validation exception is thrown
         try {
             Options::make(["foo" => "123"], [
@@ -479,7 +480,7 @@ class OptionsTest extends TestCase
             $this->assertInstanceOf(OptionValidationException::class, $e);
             $this->assertStringContainsString("-Invalid option: \"foo\" given!", $e->getMessage());
         }
-        
+
         // Check if validation exception with custom message is thrown
         try {
             Options::make(["foo" => "123"], [
@@ -496,7 +497,7 @@ class OptionsTest extends TestCase
                 $e->getMessage());
         }
     }
-    
+
     public function testValueValidation()
     {
         // Positive validation
@@ -505,7 +506,7 @@ class OptionsTest extends TestCase
         $this->assertEquals(["foo" => 1], Options::make(["foo" => 1], ["foo" => ["values" => ["true", true, 1]]]));
         $this->assertEquals(["foo" => "true"],
             Options::make(["foo" => "true"], ["foo" => ["values" => ["true", true, 1]]]));
-        
+
         // Positive validation by validator callback
         $this->assertEquals(["foo" => true], Options::make(["foo" => true], [
             "foo" => [
@@ -514,7 +515,7 @@ class OptionsTest extends TestCase
                 },
             ],
         ]));
-        
+
         // Check if validation exception is thrown
         try {
             Options::make(["foo" => "123"], [
@@ -529,7 +530,7 @@ class OptionsTest extends TestCase
                 $e->getMessage());
         }
     }
-    
+
     public function testAssociativeChildren()
     {
         $c          = 0;
@@ -555,7 +556,7 @@ class OptionsTest extends TestCase
                 "default"   => 123,
                 "validator" => function () use (&$c) {
                     $c++; // 1
-                    
+
                     return true;
                 },
             ],
@@ -564,7 +565,7 @@ class OptionsTest extends TestCase
                 "default"   => [],
                 "validator" => function () use (&$c) {
                     $c++; // 2
-                    
+
                     return true;
                 },
                 "children"  => [
@@ -574,7 +575,7 @@ class OptionsTest extends TestCase
                         "default"   => [],
                         "validator" => function () use (&$c) {
                             $c++; // 3
-                            
+
                             return true;
                         },
                         "children"  => [
@@ -583,7 +584,7 @@ class OptionsTest extends TestCase
                                 "default"   => true,
                                 "validator" => function () use (&$c) {
                                     $c++; // 4
-                                    
+
                                     return true;
                                 },
                             ],
@@ -595,7 +596,7 @@ class OptionsTest extends TestCase
                 "type"      => "array",
                 "validator" => function () use (&$c) {
                     $c++; // 5
-                    
+
                     return true;
                 },
                 "children"  => [
@@ -603,7 +604,7 @@ class OptionsTest extends TestCase
                         "type"      => "number",
                         "validator" => function () use (&$c) {
                             $c++; // 6
-                            
+
                             return true;
                         },
                     ],
@@ -615,7 +616,7 @@ class OptionsTest extends TestCase
         $this->assertEquals($expected, $v);
         $this->assertEquals(6, $c, "Failed to run all validators on child list");
     }
-    
+
     public function testSequentialChildren()
     {
         $expected   = [
@@ -661,7 +662,7 @@ class OptionsTest extends TestCase
         ];
         $this->assertEquals($expected, Options::make($initial, $definition));
     }
-    
+
     public function testSequentialChildrenNonArrayFail()
     {
         $this->expectException(OptionValidationException::class);
@@ -683,7 +684,7 @@ class OptionsTest extends TestCase
             ],
         ]);
     }
-    
+
     public function testSingleOptionApplication()
     {
         $this->assertEquals("string", Options::makeSingle("myParam", null, ["default" => "string"]));

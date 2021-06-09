@@ -24,21 +24,21 @@ namespace Neunerlei\Options;
 
 class Options
 {
-    
+
     /**
      * The class that is used when the internal option applier is instantiated
      *
      * @var string
      */
     public static $applierClass = OptionApplier::class;
-    
+
     /**
      * Our internal applier as singleton
      *
      * @var \Neunerlei\Options\OptionApplier
      */
     protected static $applier;
-    
+
     /**
      * In general, this does exactly the same as Options::make() but is designed to validate non-array options.
      *
@@ -66,10 +66,10 @@ class Options
     {
         $list   = is_null($variable) ? [] : [$paramName => $variable];
         $result = static::getApplier()->apply($list, [$paramName => $definition], $options);
-        
+
         return $result[$paramName];
     }
-    
+
     /**
      * This nifty little helper is used to apply a default definition of options
      * to a given array of options (presumably transferred as a function parameter)
@@ -173,7 +173,7 @@ class Options
     {
         return static::getApplier()->apply($input, $definition, $options);
     }
-    
+
     /**
      * Internal helper to get the singleton instance of our internal option applier
      *
@@ -184,7 +184,7 @@ class Options
         if (! empty(static::$applier) && static::$applier instanceof static::$applierClass) {
             return static::$applier;
         }
-        
+
         return static::$applier = new static::$applierClass();
     }
 }
