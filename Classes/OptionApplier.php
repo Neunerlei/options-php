@@ -199,7 +199,6 @@ class OptionApplier
                     $lastPathPart   = array_pop($readablePath);
                     $readablePath[] = $v . ' (' . $lastPathPart . ')';
                     $k              = $v;
-                    dbge($result, $k, $definition);
                 }
 
                 // Handle not found key
