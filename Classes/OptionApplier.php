@@ -325,14 +325,16 @@ class OptionApplier
      */
     protected function prepareDefinition(OptionApplierContext $context, $def): array
     {
-        // Default simple definition -> The value is the default value
         if (! is_array($def)) {
+            // Default simple definition -> The value is the default value
             $def = ['default' => $def];
-        } // Array simple definition -> The first value in the array is the default value
-        elseif (count($def) === 1 && is_numeric(key($def)) && is_array(($firstDef = reset($def)))) {
+        } elseif (count($def) === 1 && is_numeric(key($def)) && is_array(($firstDef = reset($def)))) {
+            // Array simple definition -> The first value in the array is the default value
             $def = ['default' => $firstDef];
-        } // Failed array simple definition
-        elseif (empty($def)) {
+            // @codeCoverageIgnoreStart
+        } elseif (empty($def)) {
+            // @codeCoverageIgnoreEnd
+            // Failed array simple definition
             throw new InvalidOptionDefinitionException(
                 'Definition error at: "' . implode('.', $context->path) .
                 '"; An empty array was given as definition. If you want an array as default value make sure to ' .
