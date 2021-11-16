@@ -557,7 +557,7 @@ class OptionApplier
             if (method_exists($value, '__toString')) {
                 $s        = (string)$value;
                 $sCropped = substr($s, 0, 50);
-                if (strlen($s) === 50) {
+                if (strlen($sCropped) === 50) {
                     $sCropped .= '...';
                 }
 
