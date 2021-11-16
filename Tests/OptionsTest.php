@@ -104,6 +104,14 @@ class OptionsTest extends TestCase
 
     }
 
+    public function testInvalidDefinitionKey(): void
+    {
+        $this->expectException(InvalidOptionDefinitionException::class);
+        $this->expectExceptionMessage('Definition error at: "foo"; found invalid keys: "faz" - Make sure to wrap arrays in definitions in an outer array!');
+
+        Options::make([], ['foo' => ['faz' => true]]);
+    }
+
     public function testMissingRequiredValue(): void
     {
         // Check if missing required value fails
@@ -166,6 +174,17 @@ class OptionsTest extends TestCase
 
         // The direct definition has priority over the flag value
         self::assertEquals(['foo' => false], Options::make(['foo', 'foo' => false], $flagDefinition));
+    }
+
+    public function testBooleanFlagMissingFail(): void
+    {
+        $this->expectException(OptionValidationException::class);
+        $this->expectExceptionMessage('-Invalid option key: "foo (0)" given! Did you mean: "bar" instead?');
+        Options::make(['foo'], [
+            'bar' => [
+                'type' => 'bool',
+            ],
+        ]);
     }
 
     public function testSingleTypeValidation(): void
@@ -329,6 +348,15 @@ class OptionsTest extends TestCase
         }
     }
 
+    public function testInvalidSingleTypeDefinitionFail(): void
+    {
+        $this->expectException(InvalidOptionDefinitionException::class);
+        $this->expectExceptionMessage('Definition error at: "foo" - Type definitions have to be an array of strings, or a single string!');
+        Options::make(['foo' => false], [
+            'foo' => ['type' => false],
+        ]);
+    }
+
     public function testMultiTypeValidation(): void
     {
         self::assertEquals(['foo' => 'bar'],
@@ -356,6 +384,15 @@ class OptionsTest extends TestCase
             self::assertStringContainsString('-Invalid value type at: "foo" given; Allowed types: "null" or "bool"',
                 $e->getMessage());
         }
+    }
+
+    public function testInvalidMultipleTypeDefinitionFail(): void
+    {
+        $this->expectException(InvalidOptionDefinitionException::class);
+        $this->expectExceptionMessage('Definition error at: "foo" - Type definitions have to be an array of strings, or a single string!');
+        Options::make(['foo' => false], [
+            'foo' => ['type' => [false]],
+        ]);
     }
 
     public function testDefaultTypeValidation(): void
@@ -540,6 +577,15 @@ class OptionsTest extends TestCase
         }
     }
 
+    public function testValueValidationDefinitionFail(): void
+    {
+        $this->expectException(InvalidOptionDefinitionException::class);
+        $this->expectExceptionMessage('Definition error at: "foo" - The values to validate should be an array!');
+        Options::make(['foo' => false], [
+            'foo' => ['values' => false],
+        ]);
+    }
+
     public function testAssociativeChildren(): void
     {
         $c          = 0;
@@ -706,5 +752,41 @@ class OptionsTest extends TestCase
         self::assertEquals(1, $o->getType());
         self::assertEquals('foo', $o->getMessage());
         self::assertEquals(['foo', 'bar'], $o->getPath());
+    }
+
+    public function testEmptySimilarKey(): void
+    {
+        $this->expectException(OptionValidationException::class);
+        $this->expectExceptionMessageMatches('~-Invalid option key: "foo" given!$~');
+        Options::make(['foo' => true], []);
+    }
+
+    public function testValueStringification(): void
+    {
+        $o    = new OptionApplier();
+        $fRef = (new \ReflectionObject($o))->getMethod('stringifyValue');
+        $fRef->setAccessible(true);
+
+        self::assertEquals('TRUE', $fRef->invoke($o, true));
+        self::assertEquals('FALSE', $fRef->invoke($o, false));
+        self::assertEquals('123', $fRef->invoke($o, 123));
+        self::assertEquals('Value of type: array', $fRef->invoke($o, ['foo', 'bar']));
+        self::assertEquals('Value of type: NULL', $fRef->invoke($o, null));
+        self::assertEquals('Object of type: stdClass', $fRef->invoke($o, new \stdClass()));
+
+        $m = new class() {
+            public $val = '';
+
+            public function __toString(): string
+            {
+                return $this->val;
+            }
+        };
+
+        $m->val = 'Short value';
+        self::assertEquals('Short value', $fRef->invoke($o, $m));
+
+        $m->val = 'Long value, that gets cropped down to 50 chars, to avoid super long error messages';
+        self::assertEquals('Long value, that gets cropped down to 50 chars, to...', $fRef->invoke($o, $m));
     }
 }
