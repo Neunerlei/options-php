@@ -35,26 +35,23 @@ jobs:
                 with:
                     path: ~/.composer/cache
                     key: php-${{ matrix.php-versions }}-composer-${{ hashFiles('composer.lock') }}
-
             -
                 name: Install composer dependencies
                 run: composer install
             -
                 name: Run PHPunit
                 run: composer run test
-
-    #            -
-    #                name: Run PHPunit
-    #                run: composer run test-cover-clover
-    #
-    #            -
-    #                name: Upload coverage to Codecov
-    #                uses: codecov/codecov-action@v1
-    #                # PHPUnit Coverage is broken on PHP7.3
-    #                if: matrix.php-versions == '7.4'
-    #                with:
-    #                    token: ${{ secrets.CODECOV_TOKEN }}
-    #                    file: ./Tests/Coverage.xml
+            -
+                name: Run PHPunit
+                run: composer run test-cover-clover
+            -
+                name: Upload coverage to Codecov
+                uses: codecov/codecov-action@v1
+                # PHPUnit Coverage is broken on PHP7.3
+                if: matrix.php-versions == '7.4'
+                with:
+                    token: ${{ secrets.CODECOV_TOKEN }}
+                    file: ./Tests/Coverage.xml
 
     release:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'

@@ -3,6 +3,7 @@
 .env
 vendor
 .phpunit.result.cache
+Tests/Coverage
 
 # IDEA Code Style
 .idea/*
