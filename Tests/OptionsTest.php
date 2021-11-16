@@ -36,7 +36,7 @@ use ReflectionClass;
 class OptionsTest extends TestCase
 {
 
-    public function testApplierGeneration()
+    public function testApplierGeneration(): void
     {
         $ref = new ReflectionClass(Options::class);
         self::assertEquals(OptionApplier::class, Options::$applierClass);
@@ -64,7 +64,7 @@ class OptionsTest extends TestCase
         Options::$applierClass = OptionApplier::class;
     }
 
-    public function testDefaultValue()
+    public function testDefaultValue(): void
     {
         // Simple default value
         self::assertEquals(['foo' => true], Options::make([], ['foo' => true]));
@@ -104,7 +104,7 @@ class OptionsTest extends TestCase
 
     }
 
-    public function testMissingRequiredValue()
+    public function testMissingRequiredValue(): void
     {
         // Check if missing required value fails
         try {
@@ -125,7 +125,7 @@ class OptionsTest extends TestCase
         }
     }
 
-    public function testUnknownKeyValidation()
+    public function testUnknownKeyValidation(): void
     {
         // Check if an unknown key fails
         try {
@@ -146,7 +146,7 @@ class OptionsTest extends TestCase
 
     }
 
-    public function testBooleanFlags()
+    public function testBooleanFlags(): void
     {
         $flagDefinition = ['foo' => ['type' => 'bool', 'default' => false]];
         self::assertEquals(['foo' => true], Options::make(['foo'], $flagDefinition));
@@ -168,7 +168,7 @@ class OptionsTest extends TestCase
         self::assertEquals(['foo' => false], Options::make(['foo', 'foo' => false], $flagDefinition));
     }
 
-    public function testSingleTypeValidation()
+    public function testSingleTypeValidation(): void
     {
         // Define test sets
         $sets = [
@@ -214,7 +214,7 @@ class OptionsTest extends TestCase
             ],
             [
                 'types'                 => ['resource'],
-                'data'                  => [fopen(__FILE__, 'r')],
+                'data'                  => [fopen(__FILE__, 'rb')],
                 'ignoredForInvalidData' => [],
             ],
             [
@@ -273,7 +273,7 @@ class OptionsTest extends TestCase
             ],
             [
                 'types'                 => ['callable'],
-                'data'                  => [function () { }, 'trim', [DummyClassA::class, 'foo']],
+                'data'                  => [static function () { }, 'trim', [DummyClassA::class, 'foo']],
                 'ignoredForInvalidData' => [],
             ],
         ];
@@ -289,12 +289,14 @@ class OptionsTest extends TestCase
         // Gather invalid data
         foreach ($realSets as $type => $set) {
             // Test all other data as invalid data
-            $invalidData = isset($realSets[$type]['invalidData']) ? $realSets[$type]['invalidData'] : [];
+            $invalidData = $set['invalidData'] ?? [];
             foreach ($realSets as $invalidType => $invalidSet) {
                 if ($invalidType === $type) {
                     continue;
                 }
-                if (! empty($set['ignoredForInvalidData']) && in_array($invalidType, $set['ignoredForInvalidData'])) {
+                if (! empty($set['ignoredForInvalidData'])
+                    && in_array($invalidType, $set['ignoredForInvalidData'],
+                        true)) {
                     continue;
                 }
                 foreach ($invalidSet['data'] as $data) {
@@ -320,14 +322,14 @@ class OptionsTest extends TestCase
             } catch (OptionException $exception) {
                 /** @var OptionValidationException $exception */
                 self::assertInstanceOf(OptionValidationException::class, $exception);
-                self::assertEquals(1, count($exception->getErrors()));
+                self::assertCount(1, $exception->getErrors());
                 self::assertInstanceOf(OptionValidationError::class, $exception->getErrors()[0]);
                 self::assertEquals(OptionValidationError::TYPE_INVALID_TYPE, $exception->getErrors()[0]->getType());
             }
         }
     }
 
-    public function testMultiTypeValidation()
+    public function testMultiTypeValidation(): void
     {
         self::assertEquals(['foo' => 'bar'],
             Options::make(['foo' => 'bar'], ['foo' => ['type' => ['string', 'bool']]]));
@@ -356,7 +358,7 @@ class OptionsTest extends TestCase
         }
     }
 
-    public function testDefaultTypeValidation()
+    public function testDefaultTypeValidation(): void
     {
         self::assertEquals(['foo' => true], Options::make([], ['foo' => ['type' => 'bool', 'default' => true]]));
         try {
@@ -369,7 +371,7 @@ class OptionsTest extends TestCase
         }
     }
 
-    public function testPreFilter()
+    public function testPreFilter(): void
     {
         $executed = false;
         $v        = Options::make(['foo' => '123'], [
@@ -377,15 +379,15 @@ class OptionsTest extends TestCase
                 'type'      => 'int',
                 'preFilter' => function ($v, $k, $list, $definition, $path) use (&$executed) {
                     $executed = true;
-                    $this->assertEquals('123', $v);
-                    $this->assertEquals('foo', $k);
-                    $this->assertEquals($list, ['foo' => '123']);
-                    $this->assertIsArray($definition);
-                    $this->assertArrayHasKey('type', $definition);
-                    $this->assertEquals('int', $definition['type']);
-                    $this->assertArrayHasKey('preFilter', $definition);
-                    $this->assertIsCallable($definition['preFilter']);
-                    $this->assertEquals(['foo'], $path);
+                    static::assertEquals('123', $v);
+                    static::assertEquals('foo', $k);
+                    static::assertEquals(['foo' => '123'], $list);
+                    static::assertIsArray($definition);
+                    static::assertArrayHasKey('type', $definition);
+                    static::assertEquals('int', $definition['type']);
+                    static::assertArrayHasKey('preFilter', $definition);
+                    static::assertIsCallable($definition['preFilter']);
+                    static::assertEquals(['foo'], $path);
 
                     return (int)$v;
                 },
@@ -404,7 +406,7 @@ class OptionsTest extends TestCase
         }
     }
 
-    public function testFilter()
+    public function testFilter(): void
     {
         $executed = false;
         $v        = Options::make(['foo' => 123], [
@@ -412,15 +414,15 @@ class OptionsTest extends TestCase
                 'type'   => 'int',
                 'filter' => function ($v, $k, $list, $definition, $path) use (&$executed) {
                     $executed = true;
-                    $this->assertEquals('123', $v);
-                    $this->assertEquals('foo', $k);
-                    $this->assertEquals($list, ['foo' => '123']);
-                    $this->assertIsArray($definition);
-                    $this->assertArrayHasKey('type', $definition);
-                    $this->assertEquals('int', $definition['type']);
-                    $this->assertArrayHasKey('filter', $definition);
-                    $this->assertIsCallable($definition['filter']);
-                    $this->assertEquals(['foo'], $path);
+                    static::assertEquals('123', $v);
+                    static::assertEquals('foo', $k);
+                    static::assertEquals(['foo' => '123'], $list);
+                    static::assertIsArray($definition);
+                    static::assertArrayHasKey('type', $definition);
+                    static::assertEquals('int', $definition['type']);
+                    static::assertArrayHasKey('filter', $definition);
+                    static::assertIsCallable($definition['filter']);
+                    static::assertEquals(['foo'], $path);
 
                     return $v;
                 },
@@ -439,7 +441,7 @@ class OptionsTest extends TestCase
         }
     }
 
-    public function testValidator()
+    public function testValidator(): void
     {
         $executed = false;
         $v        = Options::make(['foo' => 123], [
@@ -447,15 +449,15 @@ class OptionsTest extends TestCase
                 'type'      => 'int',
                 'validator' => function ($v, $k, $list, $definition, $path) use (&$executed) {
                     $executed = true;
-                    $this->assertEquals('123', $v);
-                    $this->assertEquals('foo', $k);
-                    $this->assertEquals($list, ['foo' => '123']);
-                    $this->assertIsArray($definition);
-                    $this->assertArrayHasKey('type', $definition);
-                    $this->assertEquals('int', $definition['type']);
-                    $this->assertArrayHasKey('validator', $definition);
-                    $this->assertIsCallable($definition['validator']);
-                    $this->assertEquals(['foo'], $path);
+                    static::assertEquals('123', $v);
+                    static::assertEquals('foo', $k);
+                    static::assertEquals(['foo' => '123'], $list);
+                    static::assertIsArray($definition);
+                    static::assertArrayHasKey('type', $definition);
+                    static::assertEquals('int', $definition['type']);
+                    static::assertArrayHasKey('validator', $definition);
+                    static::assertIsCallable($definition['validator']);
+                    static::assertEquals(['foo'], $path);
 
                     return true;
                 },
@@ -505,7 +507,7 @@ class OptionsTest extends TestCase
         }
     }
 
-    public function testValueValidation()
+    public function testValueValidation(): void
     {
         // Positive validation
         self::assertEquals(['foo' => true],
@@ -538,7 +540,7 @@ class OptionsTest extends TestCase
         }
     }
 
-    public function testAssociativeChildren()
+    public function testAssociativeChildren(): void
     {
         $c          = 0;
         $expected   = [
@@ -624,7 +626,7 @@ class OptionsTest extends TestCase
         self::assertEquals(6, $c, 'Failed to run all validators on child list');
     }
 
-    public function testSequentialChildren()
+    public function testSequentialChildren(): void
     {
         $expected   = [
             'foo'  => 'string',
@@ -670,7 +672,7 @@ class OptionsTest extends TestCase
         self::assertEquals($expected, Options::make($initial, $definition));
     }
 
-    public function testSequentialChildrenNonArrayFail()
+    public function testSequentialChildrenNonArrayFail(): void
     {
         $this->expectException(OptionValidationException::class);
         Options::make([
@@ -692,7 +694,7 @@ class OptionsTest extends TestCase
         ]);
     }
 
-    public function testSingleOptionApplication()
+    public function testSingleOptionApplication(): void
     {
         self::assertEquals('string', Options::makeSingle('myParam', null, ['default' => 'string']));
         self::assertEquals('123', Options::makeSingle('myParam', '123', ['default' => 'string']));
