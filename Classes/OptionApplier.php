@@ -582,9 +582,14 @@ class OptionApplier
     {
         // Check if we can validate that type
         $typeString = strtolower(gettype($value));
+
+        // @codeCoverageIgnoreStart
+        // Fallback should there ever be a PHP type we have not mapped
         if (! isset(static::LIST_TYPE_MAP[$typeString])) {
             return false;
         }
+        // @codeCoverageIgnoreEnd
+
         $type = static::LIST_TYPE_MAP[$typeString];
 
         // Simple lookup
