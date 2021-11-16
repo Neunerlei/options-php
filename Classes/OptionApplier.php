@@ -652,11 +652,6 @@ class OptionApplier
      */
     protected function getSimilarKey(array $haystack, string $needle): ?string
     {
-        // Check if the needle exists
-        if (isset($haystack[$needle])) {
-            return $needle;
-        }
-
         // Generate alternative keys
         $alternativeKeys = array_keys($haystack);
 
