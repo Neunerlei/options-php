@@ -349,8 +349,8 @@ class OptionApplier
         // Validate that all keys in the definition are valid
         if (is_array($def) && ! empty($unknownConfig = array_diff(array_keys($def), static::ALLOWED_DEFINITION_KEYS))) {
             throw new InvalidOptionDefinitionException(
-                'Definition error at: "' . implode('.', $context->path) . '"; found invalid keys: ' .
-                implode(', ', $unknownConfig) . ' - Make sure to wrap arrays in definitions in an outer array!');
+                'Definition error at: "' . implode('.', $context->path) . '"; found invalid keys: "' .
+                implode('", "', $unknownConfig) . '" - Make sure to wrap arrays in definitions in an outer array!');
         }
 
         // Done
