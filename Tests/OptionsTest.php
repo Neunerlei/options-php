@@ -699,4 +699,12 @@ class OptionsTest extends TestCase
         self::assertEquals('string', Options::makeSingle('myParam', null, ['default' => 'string']));
         self::assertEquals('123', Options::makeSingle('myParam', '123', ['default' => 'string']));
     }
+
+    public function testOptionValidationErrorGetters(): void
+    {
+        $o = new OptionValidationError(1, 'foo', ['foo', 'bar']);
+        self::assertEquals(1, $o->getType());
+        self::assertEquals('foo', $o->getMessage());
+        self::assertEquals(['foo', 'bar'], $o->getPath());
+    }
 }
