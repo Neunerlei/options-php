@@ -20,6 +20,7 @@ namespace Neunerlei\Options\Tests\Assets;
 
 use Neunerlei\Options\OptionApplier;
 
+include __DIR__ . '/Fixture/TypeValidationDataProvider.php';
 
 class DummyExtendedApplier extends OptionApplier
 {

@@ -22,20 +22,17 @@ namespace Neunerlei\Options\Tests;
 
 use Neunerlei\Options\InvalidOptionDefinitionException;
 use Neunerlei\Options\OptionApplier;
-use Neunerlei\Options\OptionException;
 use Neunerlei\Options\Options;
 use Neunerlei\Options\OptionValidationError;
 use Neunerlei\Options\OptionValidationException;
 use Neunerlei\Options\Tests\Assets\DummyClassA;
 use Neunerlei\Options\Tests\Assets\DummyExtendedApplier;
 use Neunerlei\Options\Tests\Assets\DummyExtendedClassA;
-use Neunerlei\Options\Tests\Assets\DummyInterfaceA;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 class OptionsTest extends TestCase
 {
-
     public function testApplierGeneration(): void
     {
         $ref = new ReflectionClass(Options::class);
@@ -185,167 +182,6 @@ class OptionsTest extends TestCase
                 'type' => 'bool',
             ],
         ]);
-    }
-
-    public function testSingleTypeValidation(): void
-    {
-        // Define test sets
-        $sets = [
-            [
-                'types'                 => ['bool', 'boolean'],
-                'data'                  => [true, false],
-                'ignoredForInvalidData' => ['true', 'false'],
-            ],
-            [
-                'types'                 => ['int', 'integer'],
-                'data'                  => [123, 546345, 12123, 56456, 1230, 0],
-                'ignoredForInvalidData' => ['numeric', 'number'],
-            ],
-            [
-                'types'                 => ['float', 'double'],
-                'data'                  => [123.23, 546345.12325, 12123.123, 56456.1, 1230.45, 0.0],
-                'ignoredForInvalidData' => ['numeric', 'number'],
-            ],
-            [
-                'types'                 => ['string'],
-                'data'                  => ['hello', 'hello world', '<html>foo bar!</html>', '', '123,212'],
-                'ignoredForInvalidData' => [],
-            ],
-            [
-                'types'                 => ['array'],
-                'data'                  => [[], ['foo' => []], [123, 1231, 123]],
-                'ignoredForInvalidData' => [],
-            ],
-            [
-                'types'                 => ['object'],
-                'data'                  => [(object)[], new DummyClassA(), new DummyExtendedClassA()],
-                'ignoredForInvalidData' => [DummyClassA::class, DummyExtendedClassA::class, DummyInterfaceA::class],
-            ],
-            [
-                'types'                 => [DummyClassA::class],
-                'data'                  => [new DummyClassA()],
-                'ignoredForInvalidData' => [DummyExtendedClassA::class, DummyInterfaceA::class],
-            ],
-            [
-                'types'                 => [DummyClassA::class, DummyExtendedClassA::class, DummyInterfaceA::class],
-                'data'                  => [new DummyExtendedClassA()],
-                'ignoredForInvalidData' => [DummyClassA::class],
-            ],
-            [
-                'types'                 => ['resource'],
-                'data'                  => [fopen(__FILE__, 'rb')],
-                'ignoredForInvalidData' => [],
-            ],
-            [
-                'types'                 => ['null'],
-                'data'                  => [null],
-                'ignoredForInvalidData' => [],
-            ],
-            [
-                'types'                 => ['number'],
-                'data'                  => [
-                    123,
-                    546345,
-                    12123,
-                    56456,
-                    1230,
-                    0,
-                    123.23,
-                    546345.12325,
-                    12123.123,
-                    56456.1,
-                    1230.45,
-                    0,
-                ],
-                'ignoredForInvalidData' => ['float', 'int', 'integer', 'double', 'numeric'],
-                'invalidData'           => ['123', '12.123', '456,123'],
-            ],
-            [
-                'types'                 => ['numeric'],
-                'data'                  => [
-                    123,
-                    546345,
-                    12123,
-                    56456,
-                    1230,
-                    0,
-                    123.23,
-                    546345.12325,
-                    12123.123,
-                    56456.1,
-                    1230.45,
-                    0,
-                    '123',
-                    '12.123',
-                ],
-                'ignoredForInvalidData' => ['float', 'int', 'integer', 'double', 'number'],
-            ],
-            [
-                'types'                 => ['true'],
-                'data'                  => [true],
-                'ignoredForInvalidData' => ['bool', 'boolean'],
-            ],
-            [
-                'types'                 => ['false'],
-                'data'                  => [false],
-                'ignoredForInvalidData' => ['bool', 'boolean'],
-            ],
-            [
-                'types'                 => ['callable'],
-                'data'                  => [static function () { }, 'trim', [DummyClassA::class, 'foo']],
-                'ignoredForInvalidData' => [],
-            ],
-        ];
-
-        // Gather a list of types
-        $realSets = [];
-        foreach ($sets as $set) {
-            foreach ($set['types'] as $type) {
-                $realSets[$type] = $set;
-            }
-        }
-
-        // Gather invalid data
-        foreach ($realSets as $type => $set) {
-            // Test all other data as invalid data
-            $invalidData = $set['invalidData'] ?? [];
-            foreach ($realSets as $invalidType => $invalidSet) {
-                if ($invalidType === $type) {
-                    continue;
-                }
-                if (! empty($set['ignoredForInvalidData'])
-                    && in_array($invalidType, $set['ignoredForInvalidData'],
-                        true)) {
-                    continue;
-                }
-                foreach ($invalidSet['data'] as $data) {
-                    $invalidData[] = $data;
-                }
-            }
-            $realSets[$type]['invalidData'] = $invalidData;
-        }
-
-        // Run tests
-        foreach ($realSets as $type => $set) {
-            // Test positive results
-            foreach ($set['data'] as $val) {
-                self::assertEquals(['foo' => $val], Options::make(['foo' => $val], ['foo' => ['type' => $type]]));
-            }
-
-            // Test negative results
-            try {
-                foreach ($set['invalidData'] as $val) {
-                    Options::make(['foo' => $val], ['foo' => ['type' => $type]]);
-                }
-                self::fail("A Validation that should fail for type: $type did not fail as expected!");
-            } catch (OptionException $exception) {
-                /** @var OptionValidationException $exception */
-                self::assertInstanceOf(OptionValidationException::class, $exception);
-                self::assertCount(1, $exception->getErrors());
-                self::assertInstanceOf(OptionValidationError::class, $exception->getErrors()[0]);
-                self::assertEquals(OptionValidationError::TYPE_INVALID_TYPE, $exception->getErrors()[0]->getType());
-            }
-        }
     }
 
     public function testInvalidSingleTypeDefinitionFail(): void
