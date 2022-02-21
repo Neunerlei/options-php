@@ -178,9 +178,24 @@ $options = Options::make($options, [
 ]);
 ```
 
-#### values _(array)_
-A basic validation routine that receives a list of possible values and checks if the given value was defined (OR operator). The array can either be set statically
-in your definition, or by using a "validator" callback that returns an array of possible values. The values validation takes place after the "validator" callback ran.
+#### validator _(string)_
+
+If the given value is a non-callable string, it will be evaluated as regular expression
+
+```php
+use Neunerlei\Options\Options;
+$options = Options::make($options, [
+    "foo" => [
+        "type" => "string",
+        "validator" => '~^0-9$~'
+    ]
+]);
+```
+
+#### validator _(array)_
+
+A basic validation routine which receives a list of possible values and will check if the given value will match at
+least one of them (OR operator).
 
 ```php
 use Neunerlei\Options\Options;
