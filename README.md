@@ -64,8 +64,9 @@ I choose arrays as a definition because they run fast, without the overhead, and
 
 #### default _(mixed|callable)_
 
-This is the default value to use when the key in $options is not given.
-If not set, the option key is required! If the default value is a Closure, the closure is called, and its result is used as the value.
+This is the default value to use when the key in $options is not given. If not set, the option key is required! If the
+default value is a Closure, the closure is called, and its result is used as the value.
+
 ```php
 use Neunerlei\Options\Options;
 
@@ -79,7 +80,7 @@ $options = Options::make($options, [
 // Closure result value default
 $options = Options::make($options, [
     "foo" => [
-        "default" => function($key, $options, $keyDefinition, $path){
+        "default" => function($key, $options, $node, $context){
             return 123;
         }       
     ]
@@ -126,14 +127,16 @@ $options = Options::make(["foo" => new A()], [ "foo" => [ "type" => [B::class]]]
 ```
 
 #### preFilter _(callable)_
-A callback that is called **BEFORE** the type validation takes place and can be used to cast the incoming value before validating its type.
+
+A callback that is called **BEFORE** the type validation takes place and can be used to cast the incoming value before
+validating its type.
 
 ```php
 use Neunerlei\Options\Options;
 $options = Options::make($options, [
     "foo" => [
-        "preFilter" => function($incomingValue, $key, $options, $keyDefinition, $path){
-            if(is_string($incomingValue)) return (int)$incomingValue;
+        "preFilter" => function($incomingValue, $key, $options, $node, $context){
+            if(is_string($incomingValue)) {return (int)$incomingValue;}
             return $incomingValue;
         }
     ]
@@ -141,14 +144,16 @@ $options = Options::make($options, [
 ```
 
 #### filter _(callable)_
-A callback to call after the type validation took place and can be used to process a given value before the custom validation begins.
+
+A callback to call after the type validation took place and can be used to process a given value before the custom
+validation begins.
 
 ```php
 use Neunerlei\Options\Options;
 $options = Options::make($options, [
     "foo" => [
         "type" => "int",
-        "filter" => function(int $incomingValue, $key, $options, $keyDefinition, $path){
+        "filter" => function(int $incomingValue, $key, $options, $node, $context){
             return empty($incomingValue) ? 1 : $incomingValue;
         }
     ]
@@ -159,16 +164,20 @@ $options = Options::make($options, [
 A callback which allows custom validation using closures or other callables. If used, the
 function should return ```TRUE``` if the validation was successful or ```FALSE``` if not. 
 
-It is also possible to return a string on error, which allows you to set a custom error message. 
+Executes a given callable. The function receives: $value, $key, $options, $node, $context.
 
-Finally you may return an array of values that will be passed to the "values" validator (see the next point for the functionality)
+* If the function returns `FALSE` the validation is failed.
+* If the function returns `TRUE` the validation is passed.
+* If the function returns an array of values, the values will be passed on, and handled like an array passed to "
+  validator".
+* If the function returns a string, it is considered a custom error message.
 
 ```php
 use Neunerlei\Options\Options;
 $options = Options::make($options, [
     "foo" => [
         "type" => "int",
-        "validator" => function(int $incomingValue, $key, $options, $keyDefinition, $path){
+        "validator" => function(int $incomingValue, $key, $options, $node, $context){
             return TRUE; // Success!
             return FALSE; // Failed
             return "Failed to validate something!"; // Failed with custom error message
