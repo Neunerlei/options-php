@@ -187,7 +187,7 @@ use Neunerlei\Options\Options;
 $options = Options::make($options, [
     "foo" => [
         "type" => "int",
-        "values" => [123, 234] // Only 123 or 234 are allowed values
+        "validator" => [123, 234] // Only 123 or 234 are allowed values
     ]
 ]);
 ```
