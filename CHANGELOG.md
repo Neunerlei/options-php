@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/Neunerlei/options-php/compare/v1.2.1...v2.0.0) (2022-02-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* Instead of $definition and $path all callbacks now
+receive the current $node and $context objects, which provide more
+information
+* Breaks almost all the class contracts, except the
+Options main class
+* "values" must now be defined using the "validator" key.
+
+### Features
+
+* add "regex" validator ([640ec65](https://github.com/Neunerlei/options-php/commit/640ec658f83617b0073d95fb1c182272d690a35b))
+* complete applier rewrite ([59d2feb](https://github.com/Neunerlei/options-php/commit/59d2feb998a868e465be26b55417d0f2a85299d3))
+* merge "values" option into "validator" ([083ce75](https://github.com/Neunerlei/options-php/commit/083ce7560a9546585b5c8944c7d5b456e7602a14))
+* more details for callables ([f72f141](https://github.com/Neunerlei/options-php/commit/f72f141e8d6bc4b33c789fc2991c48558c7efd41))
+
 ### [1.2.1](https://github.com/Neunerlei/options-php/compare/v1.2.0...v1.2.1) (2021-11-16)
 
 
