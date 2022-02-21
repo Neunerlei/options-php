@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/Neunerlei/options-php/compare/v1.2.0...v1.2.1) (2021-11-16)
+
+
+### Bug Fixes
+
+* **OptionApplier:** add ellipses after copped stringified values stringifyValue ([81e2b41](https://github.com/Neunerlei/options-php/commit/81e2b413563e9c67b271928f3cf88cd54e9b4915))
+* **OptionApplier:** add quotes to invalid keys exception message ([7057401](https://github.com/Neunerlei/options-php/commit/7057401120a194cd301ced13102f4528ade9ca05))
+* **OptionApplier:** remove dev fragment when creating an error for boolean flags ([dea6d1b](https://github.com/Neunerlei/options-php/commit/dea6d1b4277824ec392f6df94c554e794dda8f1b))
+* **OptionApplier:** remove future-proof from coverage report ([2eaa070](https://github.com/Neunerlei/options-php/commit/2eaa070998c90170701f233e8bfcc1828e4d8d3f))
+* **OptionApplier:** remove unused code block ([0f7558a](https://github.com/Neunerlei/options-php/commit/0f7558aa6f9a2dc3b09045923ad1e5ff57507c92))
+
 ## [1.2.0](https://github.com/Neunerlei/options-php/compare/v1.1.0...v1.2.0) (2021-06-09)
 
 
