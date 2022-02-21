@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace Neunerlei\Options;
 
+use Neunerlei\Options\Applier\Applier;
+
 class Options
 {
 
@@ -30,12 +32,12 @@ class Options
      *
      * @var string
      */
-    public static $applierClass = OptionApplier::class;
+    public static $applierClass = Applier::class;
 
     /**
      * Our internal applier as singleton
      *
-     * @var \Neunerlei\Options\OptionApplier
+     * @var \Neunerlei\Options\Applier\Applier
      */
     protected static $applier;
 
@@ -96,12 +98,12 @@ class Options
      * Advanced definitions
      * =============================
      * In addition to the simple default values you can also use an array as value in your definitions array.
-     * In it you can set the following options to validate and filter options as you wish.
+     * In it, you can set the following options to validate and filter options as you wish.
      *
      * - default (mixed|callable): This is the default value to use when the key in $options is empty.
-     * If not set the option key is required! If the default value is a Closure the closure is called
+     * If not set the option key is required! If the default value is a Closure the closure is called,
      * and it's result is used as value.
-     * The callback receives $key, $options, $definition, $path(For child arrays)
+     * The callback receives $key, $options, $definitionNode {@link \Neunerlei\Options\Applier\Node\Node}
      *
      * - type (string|array): Allows basic type validation of the input. Can either be a string or an array of strings.
      * Possible values are: boolean, bool, true, false, integer, int, double, float, number (int and float) or numeric
@@ -109,31 +111,45 @@ class Options
      * interface names. If multiple values are supplied they will be seen as chained via OR operator.
      *
      * - preFilter (callable): A callback which is called BEFORE the type validation takes place and can be used to
-     * cast the incoming value before validating it's type.
+     * cast the incoming value before validating its type.
      *
      * - filter (callable): A callback which is called after the type validation took place and can be used to process
      * a given value before the custom validation begins.
-     * The callback receives $value, $key, $options, $definition, $path(For child arrays)
+     * The callback receives: $value, $key, $options, $node, $context
      *
-     * - validator (callable): A callback which allows custom validation using closures or other callables. If used the
-     * function should return true if the validation was successful or false if not. It is also possible to return a
-     * string which allows you to set your own error message. In addition you may return an array of values that will
-     * be passed to the "values" validator (see the next point for the functionality)
-     * The callback receives $value, $key, $options, $definition, $path(For child arrays)
+     * - validator (callable|string|array): A callback which allows custom validation. Multiple values are allowed:
      *
-     * - values (array): A basic validation routine which receives a list of possible values and will check if
-     * the given value will match at least one of them (OR operator). The array can either be set statically
-     * in your definition, or by using a "validator" callback that returns an array of possible values.
-     * The values validation takes place after the "validator" callback ran.
+     *          - callable: Executes a given callable. The function receives: $value, $key, $options, $node, $context.
+     *                      If the function returns FALSE the validation is failed.
+     *                      If the function returns TRUE the validation is passed.
+     *                      If the function returns an array of values, the values will be passed on, and handled
+     *                      like an array passed to "validator".
+     *                      If the function returns a string, it is considered a custom error message.
+     *
+     *          - string:   If the given value is a non-callable string, it will be evaluated as regular expression
+     *
+     *          - array:    A basic validation routine which receives a list of possible values and will check if
+     *                      the given value will match at least one of them (OR operator).
      *
      * - children (array): This can be used to apply nested definitions on option trees.
-     * The children definition is done exactly the same way as on root level.
+     * The children definition is done exactly the same way as on root level. The children will only
+     * be used if the value in $options is an array (or has a default value of an empty array).
+     * There are three options on how children will be evaluated:
      *
-     * You can also iterate a list of children with the same structure by wrapping your child definition with a "*" key
-     * like: ["children" => ["*" => ["key" => true, ...]]].
-     * NOTE: The children will only be used if the value in $options is an array (or has a default value of an empty
-     * array).
+     *          - assoc:    Allows you to validate a nested, associative array
+     *                      Example: ['foo' => ['foo' => 'bar', 'bar' => 'baz]]
+     *                      Definition: ['foo' => ['type' => 'array', 'children' =>
+     *                              ['foo' => ['type' => 'string'],'bar' => 'baz']]]
      *
+     *          - '*':      Allows you to validate a list of associative arrays that all have the same structure
+     *                      Example: ['foo' => [['foo' => 'bar'], ['foo' => 'baz'], ['foo' => 'faz']]
+     *                      Definition: ['foo' => ['type' => 'array', 'children' =>
+     *                              ['*' => ['foo' => ['type' => 'string']]]]]
+     *
+     *          - '#':      Allows you to validate a list of non-array values
+     *                      Example: ['foo' => ['bar', 'baz', 'faz']], or: ['foo' => [123, 234, 4356]]
+     *                      Definition: ['foo' => ['type' => 'array', 'children' =>
+     *                              ['#' => ['type' => 'string']]]]
      *
      * Boolean flags
      * =============================
@@ -175,11 +191,11 @@ class Options
     }
 
     /**
-     * Internal helper to get the singleton instance of our internal option applier
+     * Returns the singleton instance of our internal option applier
      *
-     * @return \Neunerlei\Options\OptionApplier
+     * @return \Neunerlei\Options\Applier\Applier
      */
-    protected static function getApplier(): OptionApplier
+    public static function getApplier(): Applier
     {
         if (! empty(static::$applier) && static::$applier instanceof static::$applierClass) {
             return static::$applier;

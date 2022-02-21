@@ -19,29 +19,42 @@
 
 declare(strict_types=1);
 
-namespace Neunerlei\Options;
+namespace Neunerlei\Options\Applier\Context;
 
-
-class OptionApplierContext
+class Context
 {
     /**
      * The list of errors that occurred while running the applier
      *
-     * @var \Neunerlei\Options\OptionValidationError[]
+     * @var \Neunerlei\Options\Applier\Validation\ValidationError[]
      */
     public $errors = [];
-    
+
     /**
      * Defines the path through the given input array
      *
      * @var array
      */
     public $path = [];
-    
+
     /**
-     * The given list of options from the outside world
+     * True if the "allowUnknown" option was set to true
      *
-     * @var array
+     * @var bool
      */
-    public $options;
+    public $allowUnknown = false;
+
+    /**
+     * True if the "ignoreUnknown" option was set to true
+     *
+     * @var bool
+     */
+    public $ignoreUnknown = false;
+
+    /**
+     * True as long "allowBooleanFlags" was not set to false
+     *
+     * @var bool
+     */
+    public $allowBooleanFlags = true;
 }

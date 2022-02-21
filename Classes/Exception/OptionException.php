@@ -14,14 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2020.02.27 at 10:57
+ * Last modified: 2020.02.28 at 20:22
  */
 
 declare(strict_types=1);
 
-namespace Neunerlei\Options;
+namespace Neunerlei\Options\Exception;
 
-class InvalidOptionDefinitionException extends OptionException
+
+use Exception;
+
+class OptionException extends Exception
 {
 
 }

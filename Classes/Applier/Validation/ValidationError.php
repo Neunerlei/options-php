@@ -1,6 +1,6 @@
 <?php
-/**
- * Copyright 2020 Martin Neundorfer (Neunerlei)
+/*
+ * Copyright 2022 LABOR.digital
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,59 +14,68 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2020.02.28 at 20:49
+ * Last modified: 2021.06.09 at 17:01
  */
 
 declare(strict_types=1);
 
-namespace Neunerlei\Options;
+namespace Neunerlei\Options\Applier\Validation;
 
 
-class OptionValidationError
+use Neunerlei\Options\Applier\Node\Node;
+
+class ValidationError
 {
-    
+
     public const TYPE_UNKNOWN_KEY          = 0;
-    public const TYPE_INVALID_TYPE         = 1;
-    public const TYPE_VALIDATION_FAILED    = 2;
-    public const TYPE_INVALID_VALUE        = 4;
-    public const TYPE_MISSING_REQUIRED_KEY = 16;
-    public const TYPE_INVALID_CHILD_VALUE  = 32;
-    
+    public const TYPE_VALIDATION_FAILED    = 1;
+    public const TYPE_MISSING_REQUIRED_KEY = 2;
+    public const TYPE_INVALID_CHILD_VALUE  = 3;
+
     /**
      * The type of the validation error
      *
      * @var int
      */
     protected $type;
-    
+
     /**
      * The readable error message based on the given error type
      *
      * @var string
      */
     protected $message;
-    
+
     /**
      * The path through the given array to the failed child
      *
      * @var array
      */
     protected $path;
-    
+
     /**
-     * OptionValidationError constructor.
+     * Additional details about the failed validation that lead to this error
      *
-     * @param   int     $type
-     * @param   string  $message
-     * @param   array   $path
+     * @var \Neunerlei\Options\Applier\Validation\ValidatorResult|null
      */
-    public function __construct(int $type, string $message, array $path)
+    protected $details;
+
+    /**
+     * The node which failed to be validated
+     *
+     * @var Node|null
+     */
+    protected $node;
+
+    public function __construct(int $type, string $message, array $path, ?ValidatorResult $details, ?Node $node = null)
     {
         $this->type    = $type;
         $this->message = $message;
         $this->path    = $path;
+        $this->details = $details;
+        $this->node    = $node;
     }
-    
+
     /**
      * Returns the type of the validation error
      *
@@ -76,7 +85,7 @@ class OptionValidationError
     {
         return $this->type;
     }
-    
+
     /**
      * Returns the readable error message based on the given error type
      *
@@ -86,7 +95,7 @@ class OptionValidationError
     {
         return $this->message;
     }
-    
+
     /**
      * Returns the path through the given array to the failed child
      *
@@ -96,4 +105,34 @@ class OptionValidationError
     {
         return $this->path;
     }
+
+    /**
+     * Returns additional details about the failed validation that lead to this error
+     *
+     * @return \Neunerlei\Options\Applier\Validation\ValidatorResult|null
+     */
+    public function getDetails(): ?ValidatorResult
+    {
+        return $this->details;
+    }
+
+    /**
+     * Returns the node configuration which caused the error.
+     * Alternatively returns null if the error was not node related
+     *
+     * @return \Neunerlei\Options\Applier\Node\Node|null
+     */
+    public function getNode(): ?Node
+    {
+        if (isset($this->node)) {
+            return $this->node;
+        }
+
+        if (isset($this->details)) {
+            return $this->details->getNode();
+        }
+
+        return null;
+    }
+
 }
