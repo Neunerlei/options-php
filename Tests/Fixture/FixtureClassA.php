@@ -1,7 +1,6 @@
 <?php
-declare(strict_types=1);
-/**
- * Copyright 2020 Martin Neundorfer (Neunerlei)
+/*
+ * Copyright 2022 LABOR.digital
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +14,16 @@ declare(strict_types=1);
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2020.02.28 at 20:26
+ * Last modified: 2022.02.20 at 20:34
  */
 
-namespace Neunerlei\Options\Tests;
+declare(strict_types=1);
 
-include __DIR__ . '/Fixture/FixtureInterfaceA.php';
-include __DIR__ . '/Fixture/FixtureClassA.php';
-include __DIR__ . '/Fixture/FixtureExtendedClassA.php';
-include __DIR__ . '/Fixture/FixtureExtendedApplier.php';
-include __DIR__ . '/Data/TypeValidationDataProvider.php';
 
+namespace Neunerlei\Options\Tests\Fixture;
+
+
+class FixtureClassA
+{
+    public static function foo(): void { }
+}

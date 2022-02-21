@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Copyright 2020 Martin Neundorfer (Neunerlei)
  *
@@ -20,29 +21,31 @@
 namespace Neunerlei\Options\Tests;
 
 
-use Neunerlei\Options\InvalidOptionDefinitionException;
-use Neunerlei\Options\OptionApplier;
+use Neunerlei\Options\Applier\Applier;
+use Neunerlei\Options\Applier\Node\Node;
+use Neunerlei\Options\Applier\Validation\ValidationError;
+use Neunerlei\Options\Applier\Validation\ValidationErrorFactory;
+use Neunerlei\Options\Applier\Validation\ValidatorResult;
+use Neunerlei\Options\Exception\InvalidOptionDefinitionException;
+use Neunerlei\Options\Exception\OptionValidationException;
 use Neunerlei\Options\Options;
-use Neunerlei\Options\OptionValidationError;
-use Neunerlei\Options\OptionValidationException;
-use Neunerlei\Options\Tests\Assets\DummyClassA;
-use Neunerlei\Options\Tests\Assets\DummyExtendedApplier;
-use Neunerlei\Options\Tests\Assets\DummyExtendedClassA;
+use Neunerlei\Options\Tests\Fixture\FixtureExtendedApplier;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 class OptionsTest extends TestCase
 {
+    /** @noinspection PhpConditionAlreadyCheckedInspection */
     public function testApplierGeneration(): void
     {
         $ref = new ReflectionClass(Options::class);
-        self::assertEquals(OptionApplier::class, Options::$applierClass);
+        self::assertEquals(Applier::class, Options::$applierClass);
 
         // Test default applier instantiation
         Options::make([], []);
         $props   = $ref->getStaticProperties();
         $applier = $props['applier'];
-        self::assertInstanceOf(OptionApplier::class, $props['applier']);
+        self::assertInstanceOf(Applier::class, $props['applier']);
 
         // Test if singleton works
         Options::make([], []);
@@ -51,83 +54,22 @@ class OptionsTest extends TestCase
         self::assertSame($applier, $applier2);
 
         // Check if the class can be overwritten and will automatically update the instance
-        Options::$applierClass = DummyExtendedApplier::class;
+        Options::$applierClass = FixtureExtendedApplier::class;
         Options::make([], []);
         $props    = $ref->getStaticProperties();
         $applier3 = $props['applier'];
-        self::assertInstanceOf(DummyExtendedApplier::class, $applier3);
+        self::assertInstanceOf(FixtureExtendedApplier::class, $applier3);
         self::assertSame($applier, $applier2);
         self::assertNotSame($applier, $applier3);
-        Options::$applierClass = OptionApplier::class;
-    }
-
-    public function testDefaultValue(): void
-    {
-        // Simple default value
-        self::assertEquals(['foo' => true], Options::make([], ['foo' => true]));
-        self::assertEquals(['foo' => 123123], Options::make([], [
-            'foo' => function ($k, $options, $definition, $path) {
-                $this->assertEquals('foo', $k);
-                $this->assertEquals([], $options);
-                $this->assertArrayHasKey('default', $definition);
-                $this->assertIsCallable($definition['default']);
-                $this->assertEquals(['foo'], $path);
-
-                return 123123;
-            },
-        ]));
-        self::assertEquals(['foo' => 123], Options::make([], ['foo' => 123]));
-        self::assertEquals(['foo' => 123, 'bar' => 'baz'], Options::make([], ['foo' => 123, 'bar' => 'baz']));
-
-        // Complex default
-        self::assertEquals(['foo' => true], Options::make([], ['foo' => ['default' => true]]));
-        self::assertEquals(['foo' => 123], Options::make([], ['foo' => ['default' => 123]]));
-        self::assertEquals(['foo' => 123, 'bar' => 'baz'],
-            Options::make([], ['foo' => ['default' => 123], 'bar' => ['default' => 'baz']]));
-
-        // Check if simple array definition works
-        self::assertEquals(['foo' => []], Options::make([], ['foo' => [[]]]));
-        self::assertEquals(['foo' => ['foo' => 'bar']], Options::make([], ['foo' => [['foo' => 'bar']]]));
-
-        // Check if invalid array default definition fails
-        try {
-            Options::make([], ['foo' => []]);
-            self::fail('Invalid array default value did not throw an exception!');
-        } catch (InvalidOptionDefinitionException $e) {
-            self::assertInstanceOf(InvalidOptionDefinitionException::class, $e);
-            self::assertStringContainsString('Definition error at: "foo"; An empty array was given as definition.',
-                $e->getMessage());
-        }
-
+        Options::$applierClass = Applier::class;
     }
 
     public function testInvalidDefinitionKey(): void
     {
         $this->expectException(InvalidOptionDefinitionException::class);
-        $this->expectExceptionMessage('Definition error at: "foo"; found invalid keys: "faz" - Make sure to wrap arrays in definitions in an outer array!');
+        $this->expectExceptionMessage('Definition error at: "foo"; Found invalid key: "faz" - Make sure to wrap arrays in definitions in an outer array');
 
         Options::make([], ['foo' => ['faz' => true]]);
-    }
-
-    public function testMissingRequiredValue(): void
-    {
-        // Check if missing required value fails
-        try {
-            Options::make([], ['foo' => ['type' => 'string']]);
-            self::fail('Missing required value did not throw an exception!');
-        } catch (OptionValidationException $e) {
-            self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-The option key: "foo" is required!', $e->getMessage());
-        }
-
-        // Check if the "required" pseudo option works
-        try {
-            Options::make([], ['foo' => ['required' => true, 'default' => null]]);
-            self::fail('Missing required value did not throw an exception!');
-        } catch (OptionValidationException $e) {
-            self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-The option key: "foo" is required!', $e->getMessage());
-        }
     }
 
     public function testUnknownKeyValidation(): void
@@ -138,7 +80,7 @@ class OptionsTest extends TestCase
             self::fail('Unknown key did not throw an exception!');
         } catch (OptionValidationException $e) {
             self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-Invalid option key: "bar" given!', $e->getMessage());
+            self::assertStringContainsString('-Invalid option key: "bar" given', $e->getMessage());
         }
 
         // Check if an unknown key can be allowed
@@ -184,398 +126,6 @@ class OptionsTest extends TestCase
         ]);
     }
 
-    public function testInvalidSingleTypeDefinitionFail(): void
-    {
-        $this->expectException(InvalidOptionDefinitionException::class);
-        $this->expectExceptionMessage('Definition error at: "foo" - Type definitions have to be an array of strings, or a single string!');
-        Options::make(['foo' => false], [
-            'foo' => ['type' => false],
-        ]);
-    }
-
-    public function testMultiTypeValidation(): void
-    {
-        self::assertEquals(['foo' => 'bar'],
-            Options::make(['foo' => 'bar'], ['foo' => ['type' => ['string', 'bool']]]));
-        self::assertEquals(['foo' => true], Options::make(['foo' => true], ['foo' => ['type' => ['string', 'bool']]]));
-        self::assertEquals(['foo' => false],
-            Options::make(['foo' => false], ['foo' => ['type' => ['string', 'bool']]]));
-        $a = new DummyExtendedClassA();
-        self::assertEquals(['foo' => $a],
-            Options::make(['foo' => $a], ['foo' => ['type' => [DummyClassA::class, 'bool']]]));
-
-        try {
-            self::assertEquals(['foo' => $a], Options::make(['foo' => $a], ['foo' => ['type' => ['string', 'bool']]]));
-            self::fail('Missing required value did not throw an exception!');
-        } catch (OptionValidationException $e) {
-            self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-Invalid value type at: "foo" given; Allowed types: "string" or "bool"',
-                $e->getMessage());
-        }
-        try {
-            self::assertEquals(['foo' => $a], Options::make(['foo' => $a], ['foo' => ['type' => ['null', 'bool']]]));
-            self::fail('Missing required value did not throw an exception!');
-        } catch (OptionValidationException $e) {
-            self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-Invalid value type at: "foo" given; Allowed types: "null" or "bool"',
-                $e->getMessage());
-        }
-    }
-
-    public function testInvalidMultipleTypeDefinitionFail(): void
-    {
-        $this->expectException(InvalidOptionDefinitionException::class);
-        $this->expectExceptionMessage('Definition error at: "foo" - Type definitions have to be an array of strings, or a single string!');
-        Options::make(['foo' => false], [
-            'foo' => ['type' => [false]],
-        ]);
-    }
-
-    public function testDefaultTypeValidation(): void
-    {
-        self::assertEquals(['foo' => true], Options::make([], ['foo' => ['type' => 'bool', 'default' => true]]));
-        try {
-            Options::make([], ['foo' => ['type' => 'string', 'default' => true]]);
-            self::fail('Did not fail when default value did not match the variable type!');
-        } catch (OptionValidationException $e) {
-            self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-Invalid value type at: "foo" given; Allowed types: "string"',
-                $e->getMessage());
-        }
-    }
-
-    public function testPreFilter(): void
-    {
-        $executed = false;
-        $v        = Options::make(['foo' => '123'], [
-            'foo' => [
-                'type'      => 'int',
-                'preFilter' => function ($v, $k, $list, $definition, $path) use (&$executed) {
-                    $executed = true;
-                    static::assertEquals('123', $v);
-                    static::assertEquals('foo', $k);
-                    static::assertEquals(['foo' => '123'], $list);
-                    static::assertIsArray($definition);
-                    static::assertArrayHasKey('type', $definition);
-                    static::assertEquals('int', $definition['type']);
-                    static::assertArrayHasKey('preFilter', $definition);
-                    static::assertIsCallable($definition['preFilter']);
-                    static::assertEquals(['foo'], $path);
-
-                    return (int)$v;
-                },
-            ],
-        ]);
-        self::assertTrue($executed);
-        self::assertEquals(['foo' => 123], $v);
-
-        // Check validation if invalid callable is given
-        try {
-            Options::make(['foo' => '123'], ['foo' => ['preFilter' => 'notExistingFunction__']]);
-            self::fail('Invalid preFilter did not throw an exception!');
-        } catch (InvalidOptionDefinitionException $e) {
-            self::assertInstanceOf(InvalidOptionDefinitionException::class, $e);
-            self::assertStringContainsString('The preFilter is not callable!', $e->getMessage());
-        }
-    }
-
-    public function testFilter(): void
-    {
-        $executed = false;
-        $v        = Options::make(['foo' => 123], [
-            'foo' => [
-                'type'   => 'int',
-                'filter' => function ($v, $k, $list, $definition, $path) use (&$executed) {
-                    $executed = true;
-                    static::assertEquals('123', $v);
-                    static::assertEquals('foo', $k);
-                    static::assertEquals(['foo' => '123'], $list);
-                    static::assertIsArray($definition);
-                    static::assertArrayHasKey('type', $definition);
-                    static::assertEquals('int', $definition['type']);
-                    static::assertArrayHasKey('filter', $definition);
-                    static::assertIsCallable($definition['filter']);
-                    static::assertEquals(['foo'], $path);
-
-                    return $v;
-                },
-            ],
-        ]);
-        self::assertTrue($executed);
-        self::assertEquals(['foo' => 123], $v);
-
-        // Check validation if invalid callable is given
-        try {
-            Options::make(['foo' => '123'], ['foo' => ['filter' => 'notExistingFunction__']]);
-            self::fail('Invalid filter did not throw an exception!');
-        } catch (InvalidOptionDefinitionException $e) {
-            self::assertInstanceOf(InvalidOptionDefinitionException::class, $e);
-            self::assertStringContainsString('The filter is not callable!', $e->getMessage());
-        }
-    }
-
-    public function testValidator(): void
-    {
-        $executed = false;
-        $v        = Options::make(['foo' => 123], [
-            'foo' => [
-                'type'      => 'int',
-                'validator' => function ($v, $k, $list, $definition, $path) use (&$executed) {
-                    $executed = true;
-                    static::assertEquals('123', $v);
-                    static::assertEquals('foo', $k);
-                    static::assertEquals(['foo' => '123'], $list);
-                    static::assertIsArray($definition);
-                    static::assertArrayHasKey('type', $definition);
-                    static::assertEquals('int', $definition['type']);
-                    static::assertArrayHasKey('validator', $definition);
-                    static::assertIsCallable($definition['validator']);
-                    static::assertEquals(['foo'], $path);
-
-                    return true;
-                },
-            ],
-        ]);
-        self::assertTrue($executed);
-        self::assertEquals(['foo' => 123], $v);
-
-        // Check if invalid validator fails
-        try {
-            Options::make(['foo' => '123'], ['foo' => ['validator' => 'notExistingFunction__']]);
-            self::fail('Invalid validator did not throw an exception!');
-        } catch (InvalidOptionDefinitionException $e) {
-            self::assertInstanceOf(InvalidOptionDefinitionException::class, $e);
-            self::assertStringContainsString('The validator is not callable!', $e->getMessage());
-        }
-
-        // Check if validation exception is thrown
-        try {
-            Options::make(['foo' => '123'], [
-                'foo' => [
-                    'validator' => function () {
-                        return false;
-                    },
-                ],
-            ]);
-            self::fail('Failed validator did not throw an exception!');
-        } catch (OptionValidationException $e) {
-            self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-Invalid option: "foo" given!', $e->getMessage());
-        }
-
-        // Check if validation exception with custom message is thrown
-        try {
-            Options::make(['foo' => '123'], [
-                'foo' => [
-                    'validator' => function () {
-                        return 'Custom error message';
-                    },
-                ],
-            ]);
-            self::fail('Failed validator did not throw an exception!');
-        } catch (OptionValidationException $e) {
-            self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-Validation failed at: "foo" - Custom error message',
-                $e->getMessage());
-        }
-    }
-
-    public function testValueValidation(): void
-    {
-        // Positive validation
-        self::assertEquals(['foo' => true],
-            Options::make(['foo' => true], ['foo' => ['values' => ['true', true, 1]]]));
-        self::assertEquals(['foo' => 1], Options::make(['foo' => 1], ['foo' => ['values' => ['true', true, 1]]]));
-        self::assertEquals(['foo' => 'true'],
-            Options::make(['foo' => 'true'], ['foo' => ['values' => ['true', true, 1]]]));
-
-        // Positive validation by validator callback
-        self::assertEquals(['foo' => true], Options::make(['foo' => true], [
-            'foo' => [
-                'validator' => function () {
-                    return ['foo', true];
-                },
-            ],
-        ]));
-
-        // Check if validation exception is thrown
-        try {
-            Options::make(['foo' => '123'], [
-                'foo' => [
-                    'values' => ['foo', 123],
-                ],
-            ]);
-            self::fail('Failed value validation did not throw an exception!');
-        } catch (OptionValidationException $e) {
-            self::assertInstanceOf(OptionValidationException::class, $e);
-            self::assertStringContainsString('-Validation failed at: "foo" - Only the following values are allowed: "foo", "123"',
-                $e->getMessage());
-        }
-    }
-
-    public function testValueValidationDefinitionFail(): void
-    {
-        $this->expectException(InvalidOptionDefinitionException::class);
-        $this->expectExceptionMessage('Definition error at: "foo" - The values to validate should be an array!');
-        Options::make(['foo' => false], [
-            'foo' => ['values' => false],
-        ]);
-    }
-
-    public function testAssociativeChildren(): void
-    {
-        $c          = 0;
-        $expected   = [
-            'foo' => 123,
-            'bar' => [
-                'baz'    => 123,
-                'barBaz' => [
-                    'fooBar' => true,
-                ],
-            ],
-            'baz' => [
-                'bar' => 123,
-                'foo' => false,
-            ],
-        ];
-        $initial    = [
-            'foo' => 123,
-            'baz' => ['bar' => 123],
-        ];
-        $definition = [
-            'foo' => [
-                'default'   => 123,
-                'validator' => function () use (&$c) {
-                    $c++; // 1
-
-                    return true;
-                },
-            ],
-            'bar' => [
-                'type'      => 'array',
-                'default'   => [],
-                'validator' => function () use (&$c) {
-                    $c++; // 2
-
-                    return true;
-                },
-                'children'  => [
-                    'baz'    => 123,
-                    'barBaz' => [
-                        'type'      => 'array',
-                        'default'   => [],
-                        'validator' => function () use (&$c) {
-                            $c++; // 3
-
-                            return true;
-                        },
-                        'children'  => [
-                            'fooBar' => [
-                                'type'      => 'bool',
-                                'default'   => true,
-                                'validator' => function () use (&$c) {
-                                    $c++; // 4
-
-                                    return true;
-                                },
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-            'baz' => [
-                'type'      => 'array',
-                'validator' => function () use (&$c) {
-                    $c++; // 5
-
-                    return true;
-                },
-                'children'  => [
-                    'bar' => [
-                        'type'      => 'number',
-                        'validator' => function () use (&$c) {
-                            $c++; // 6
-
-                            return true;
-                        },
-                    ],
-                    'foo' => false,
-                ],
-            ],
-        ];
-        $v          = Options::make($initial, $definition);
-        self::assertEquals($expected, $v);
-        self::assertEquals(6, $c, 'Failed to run all validators on child list');
-    }
-
-    public function testSequentialChildren(): void
-    {
-        $expected   = [
-            'foo'  => 'string',
-            'list' => [
-                [
-                    'foo' => true,
-                    'bar' => '123',
-                ],
-                [
-                    'foo' => false,
-                    'bar' => 'asdf',
-                ],
-                [
-                    'foo' => true,
-                    'bar' => 'bar',
-                ],
-            ],
-        ];
-        $initial    = [
-            'list' => [
-                ['foo', 'bar' => '123'],
-                ['bar' => 'asdf'],
-                ['foo' => true],
-            ],
-        ];
-        $definition = [
-            'foo'  => 'string',
-            'list' => [
-                'children' => [
-                    '*' => [
-                        'foo' => [
-                            'type'    => 'boolean',
-                            'default' => false,
-                        ],
-                        'bar' => [
-                            'type'    => 'string',
-                            'default' => 'bar',
-                        ],
-                    ],
-                ],
-            ],
-        ];
-        self::assertEquals($expected, Options::make($initial, $definition));
-    }
-
-    public function testSequentialChildrenNonArrayFail(): void
-    {
-        $this->expectException(OptionValidationException::class);
-        Options::make([
-            'options' => [
-                [
-                    'foo' => true,
-                ],
-                '',
-            ],
-        ], [
-            'options' => [
-                'type'     => 'array',
-                'children' => [
-                    '*' => [
-                        'foo' => true,
-                    ],
-                ],
-            ],
-        ]);
-    }
-
     public function testSingleOptionApplication(): void
     {
         self::assertEquals('string', Options::makeSingle('myParam', null, ['default' => 'string']));
@@ -584,10 +134,26 @@ class OptionsTest extends TestCase
 
     public function testOptionValidationErrorGetters(): void
     {
-        $o = new OptionValidationError(1, 'foo', ['foo', 'bar']);
+        $n = new Node();
+        $o = new ValidationError(1, 'foo', ['foo', 'bar'],
+            new ValidatorResult(ValidatorResult::TYPE_GENERIC, $n, null, null));
         self::assertEquals(1, $o->getType());
         self::assertEquals('foo', $o->getMessage());
         self::assertEquals(['foo', 'bar'], $o->getPath());
+        self::assertSame($n, $o->getNode());
+        self::assertInstanceOf(ValidatorResult::class, $o->getDetails());
+
+        // Node from details
+        self::assertSame($n, $o->getDetails()->getNode());
+
+        // Node from given node
+        $o = new ValidationError(1, 'foo', ['foo', 'bar'], null, $n);
+        self::assertSame($n, $o->getNode());
+        self::assertNull($o->getDetails());
+
+        // No node and no details
+        $o = new ValidationError(1, 'foo', ['foo', 'bar'], null, null);
+        self::assertNull($o->getNode());
     }
 
     public function testEmptySimilarKey(): void
@@ -597,9 +163,32 @@ class OptionsTest extends TestCase
         Options::make(['foo' => true], []);
     }
 
+    public function testInvalidOptionDefinitionPath(): void
+    {
+        try {
+            Options::make(['foo' => ['bar' => ['foo', 'bar', 'baz']]], [
+                'foo' => [
+                    'children' => [
+                        'bar' => [
+                            'children' => [
+                                '#' => [
+                                    'foo' => true,
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+        } catch (InvalidOptionDefinitionException $e) {
+            self::assertEquals(['foo', 'bar'], $e->getPath());
+            self::assertEquals('Definition error at: "foo.bar"; Found invalid key: "foo" - Make sure to wrap arrays in definitions in an outer array!',
+                $e->getMessage());
+        }
+    }
+
     public function testValueStringification(): void
     {
-        $o    = new OptionApplier();
+        $o    = new ValidationErrorFactory();
         $fRef = (new \ReflectionObject($o))->getMethod('stringifyValue');
         $fRef->setAccessible(true);
 
@@ -607,7 +196,7 @@ class OptionsTest extends TestCase
         self::assertEquals('FALSE', $fRef->invoke($o, false));
         self::assertEquals('123', $fRef->invoke($o, 123));
         self::assertEquals('Value of type: array', $fRef->invoke($o, ['foo', 'bar']));
-        self::assertEquals('Value of type: NULL', $fRef->invoke($o, null));
+        self::assertEquals('NULL', $fRef->invoke($o, null));
         self::assertEquals('Object of type: stdClass', $fRef->invoke($o, new \stdClass()));
 
         $m = new class() {

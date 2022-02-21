@@ -14,17 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 11:52
+ * Last modified: 2022.02.20 at 20:33
  */
 
 declare(strict_types=1);
 
 
-namespace Neunerlei\Options\Tests\Fixture;
+namespace Neunerlei\Options\Tests\Data;
 
 
-use Neunerlei\Options\Tests\Assets\DummyClassA;
-use Neunerlei\Options\Tests\Assets\DummyExtendedClassA;
+use Neunerlei\Options\Tests\Fixture\FixtureClassA;
+use Neunerlei\Options\Tests\Fixture\FixtureExtendedClassA;
 
 class TypeValidationDataProvider
 {
@@ -53,7 +53,7 @@ class TypeValidationDataProvider
     protected const IGNORE_VALUES_FOR_INVALID_DATA
         = [
             'string' => ['123', '12.123', '-1', '-12.12', 'trim'],
-            'array'  => [[DummyClassA::class, 'foo']],
+            'array'  => [[FixtureClassA::class, 'foo']],
         ];
 
     protected const ADDITIONAL_INVALID_DATA
@@ -138,8 +138,8 @@ class TypeValidationDataProvider
                 },
                 'object'   => function (array &$data) {
                     $data[] = (object)[];
-                    $data[] = new DummyClassA();
-                    $data[] = new DummyExtendedClassA();
+                    $data[] = new FixtureClassA();
+                    $data[] = new FixtureExtendedClassA();
                     $data[] = static function () { };
                 },
                 'resource' => function (array &$data) {
@@ -165,7 +165,7 @@ class TypeValidationDataProvider
                 'callable' => function (array &$data) {
                     $data[] = static function () { };
                     $data[] = 'trim';
-                    $data[] = [DummyClassA::class, 'foo'];
+                    $data[] = [FixtureClassA::class, 'foo'];
                 },
             ]);
     }
