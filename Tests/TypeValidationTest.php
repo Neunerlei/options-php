@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 11:45
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ class TypeValidationTest extends TestCase
             'numeric',
             'callable',
         ];
-
+    
     public function provideTestPositiveSingleTypeValidationData(): array
     {
         $data = [];
@@ -66,16 +66,16 @@ class TypeValidationTest extends TestCase
                 $data[] = [$type, $value];
             }
         }
-
+        
         // Special cases for class object validation
         $data[] = [FixtureClassA::class, new FixtureClassA()];
         $data[] = [FixtureClassA::class, new FixtureExtendedClassA()];
         $data[] = [FixtureExtendedClassA::class, new FixtureExtendedClassA()];
         $data[] = [FixtureInterfaceA::class, new FixtureExtendedClassA()];
-
+        
         return $data;
     }
-
+    
     /**
      * @dataProvider provideTestPositiveSingleTypeValidationData
      */
@@ -83,7 +83,7 @@ class TypeValidationTest extends TestCase
     {
         self::assertEquals(['foo' => $value], Options::make(['foo' => $value], ['foo' => ['type' => $type]]));
     }
-
+    
     public function provideTestNegativeSingleTypeValidationData(): array
     {
         $data = [];
@@ -92,15 +92,15 @@ class TypeValidationTest extends TestCase
                 $data[] = [$type, $value];
             }
         }
-
+        
         // Special cases for class object validation
         $data[] = [FixtureInterfaceA::class, (object)[]];
         $data[] = [FixtureInterfaceA::class, 'non existing class'];
         $data[] = [FixtureInterfaceA::class, new FixtureClassA()];
-
+        
         return $data;
     }
-
+    
     /**
      * @dataProvider provideTestNegativeSingleTypeValidationData
      */
@@ -119,14 +119,14 @@ class TypeValidationTest extends TestCase
             self::assertInstanceOf(Node::class, $exception->getErrors()[0]->getNode());
         }
     }
-
+    
     public function testInvalidSingleTypeDefinitionFail(): void
     {
         $this->expectException(InvalidOptionDefinitionException::class);
         $this->expectExceptionMessage('Definition error at: "foo"; Invalid type definition; Type definitions have to be an array of strings, or a single string!');
         Options::make(['foo' => false], ['foo' => ['type' => false]]);
     }
-
+    
     public function provideTestPositiveMultiTypeValidationData(): array
     {
         return [
@@ -148,7 +148,7 @@ class TypeValidationTest extends TestCase
             ],
         ];
     }
-
+    
     /**
      * @dataProvider provideTestPositiveMultiTypeValidationData
      */
@@ -156,7 +156,7 @@ class TypeValidationTest extends TestCase
     {
         static::assertEquals($expect, Options::make($expect, $definition));
     }
-
+    
     public function provideTestNegativeMultiTypeValidationData(): array
     {
         return [
@@ -173,7 +173,7 @@ class TypeValidationTest extends TestCase
             ],
         ];
     }
-
+    
     /**
      * @dataProvider provideTestNegativeMultiTypeValidationData
      */
@@ -183,7 +183,7 @@ class TypeValidationTest extends TestCase
         $this->expectExceptionMessage($error);
         Options::make($data, $definition);
     }
-
+    
     public function testInvalidMultipleTypeDefinitionFail(): void
     {
         $this->expectException(InvalidOptionDefinitionException::class);
@@ -191,12 +191,12 @@ class TypeValidationTest extends TestCase
             'Definition error at: "foo"; Invalid type definition; Type definitions have to be an array of strings, or a single string!');
         Options::make(['foo' => false], ['foo' => ['type' => [false]]]);
     }
-
+    
     public function testPositiveDefaultTypeValidation(): void
     {
         self::assertEquals(['foo' => true], Options::make([], ['foo' => ['type' => 'bool', 'default' => true]]));
     }
-
+    
     public function testNegativeDefaultTypeValidation(): void
     {
         $this->expectException(OptionValidationException::class);

@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 20:05
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 
 class DefaultValueTest extends TestCase
 {
-
+    
     public function provideTestThatDefaultValueIsBeingSetData(): array
     {
         return [
@@ -55,14 +55,14 @@ class DefaultValueTest extends TestCase
                         $this->assertFalse($node->isRequired);
                         $this->assertIsCallable($node->default);
                         $this->assertEquals(['foo'], $context->path);
-
+                        
                         return 123123;
                     },
                 ],
             ],
         ];
     }
-
+    
     /**
      * @dataProvider provideTestThatDefaultValueIsBeingSetData
      */
@@ -70,14 +70,14 @@ class DefaultValueTest extends TestCase
     {
         self::assertEquals($expect, Options::make([], $definition));
     }
-
+    
     public function testIfInvalidDefaultArrayFails(): void
     {
         $this->expectException(InvalidOptionDefinitionException::class);
         $this->expectExceptionMessage('Definition error at: "foo"; An empty array was given as definition.');
         Options::make([], ['foo' => []]);
     }
-
+    
     public function testIfMissingRequiredValueFails(): void
     {
         $this->expectException(OptionValidationException::class);

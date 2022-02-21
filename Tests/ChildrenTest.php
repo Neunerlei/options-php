@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.21 at 15:33
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -32,11 +32,11 @@ class ChildrenTest extends TestCase
 {
     public function testAssociativeChildren(): void
     {
-        $c          = 0;
-        $expected   = [
+        $c = 0;
+        $expected = [
             'foo' => 123,
             'bar' => [
-                'baz'    => 123,
+                'baz' => 123,
                 'barBaz' => [
                     'fooBar' => true,
                 ],
@@ -46,44 +46,44 @@ class ChildrenTest extends TestCase
                 'foo' => false,
             ],
         ];
-        $initial    = [
+        $initial = [
             'foo' => 123,
             'baz' => ['bar' => 123],
         ];
         $definition = [
             'foo' => [
-                'default'   => 123,
+                'default' => 123,
                 'validator' => function () use (&$c) {
                     $c++; // 1
-
+                    
                     return true;
                 },
             ],
             'bar' => [
-                'type'      => 'array',
-                'default'   => [],
+                'type' => 'array',
+                'default' => [],
                 'validator' => function () use (&$c) {
                     $c++; // 2
-
+                    
                     return true;
                 },
-                'children'  => [
-                    'baz'    => 123,
+                'children' => [
+                    'baz' => 123,
                     'barBaz' => [
-                        'type'      => 'array',
-                        'default'   => [],
+                        'type' => 'array',
+                        'default' => [],
                         'validator' => function () use (&$c) {
                             $c++; // 3
-
+                            
                             return true;
                         },
-                        'children'  => [
+                        'children' => [
                             'fooBar' => [
-                                'type'      => 'bool',
-                                'default'   => true,
+                                'type' => 'bool',
+                                'default' => true,
                                 'validator' => function () use (&$c) {
                                     $c++; // 4
-
+                                    
                                     return true;
                                 },
                             ],
@@ -92,18 +92,18 @@ class ChildrenTest extends TestCase
                 ],
             ],
             'baz' => [
-                'type'      => 'array',
+                'type' => 'array',
                 'validator' => function () use (&$c) {
                     $c++; // 5
-
+                    
                     return true;
                 },
-                'children'  => [
+                'children' => [
                     'bar' => [
-                        'type'      => 'number',
+                        'type' => 'number',
                         'validator' => function () use (&$c) {
                             $c++; // 6
-
+                            
                             return true;
                         },
                     ],
@@ -111,15 +111,15 @@ class ChildrenTest extends TestCase
                 ],
             ],
         ];
-        $v          = Options::make($initial, $definition);
+        $v = Options::make($initial, $definition);
         self::assertEquals($expected, $v);
         self::assertEquals(6, $c, 'Failed to run all validators on child list');
     }
-
+    
     public function testSequentialChildren(): void
     {
-        $expected   = [
-            'foo'  => 'string',
+        $expected = [
+            'foo' => 'string',
             'list' => [
                 [
                     'foo' => true,
@@ -135,7 +135,7 @@ class ChildrenTest extends TestCase
                 ],
             ],
         ];
-        $initial    = [
+        $initial = [
             'list' => [
                 ['foo', 'bar' => '123'],
                 ['bar' => 'asdf'],
@@ -143,16 +143,16 @@ class ChildrenTest extends TestCase
             ],
         ];
         $definition = [
-            'foo'  => 'string',
+            'foo' => 'string',
             'list' => [
                 'children' => [
                     '*' => [
                         'foo' => [
-                            'type'    => 'boolean',
+                            'type' => 'boolean',
                             'default' => false,
                         ],
                         'bar' => [
-                            'type'    => 'string',
+                            'type' => 'string',
                             'default' => 'bar',
                         ],
                     ],
@@ -161,7 +161,7 @@ class ChildrenTest extends TestCase
         ];
         self::assertEquals($expected, Options::make($initial, $definition));
     }
-
+    
     public function testSequentialChildrenNonArrayFail(): void
     {
         $this->expectException(OptionValidationException::class);
@@ -174,7 +174,7 @@ class ChildrenTest extends TestCase
             ],
         ], [
             'options' => [
-                'type'     => 'array',
+                'type' => 'array',
                 'children' => [
                     '*' => [
                         'foo' => true,
@@ -183,7 +183,7 @@ class ChildrenTest extends TestCase
             ],
         ]);
     }
-
+    
     public function provideTestValueListChildrenData(): array
     {
         return [
@@ -197,10 +197,10 @@ class ChildrenTest extends TestCase
                 ],
                 [
                     'foo' => [
-                        'type'     => 'array',
+                        'type' => 'array',
                         'children' => [
                             '#' => [
-                                'type'      => 'string',
+                                'type' => 'string',
                                 'validator' => '~^[a-c]$~',
                             ],
                         ],
@@ -225,10 +225,10 @@ class ChildrenTest extends TestCase
                 ],
                 [
                     'foo' => [
-                        'type'     => 'array',
+                        'type' => 'array',
                         'children' => [
                             '#' => [
-                                'type'     => 'array',
+                                'type' => 'array',
                                 'children' => [
                                     'foo' => 1,
                                     'bar' => 2,
@@ -260,7 +260,7 @@ class ChildrenTest extends TestCase
             ],
         ];
     }
-
+    
     /**
      * @dataProvider provideTestValueListChildrenData
      */
@@ -268,7 +268,7 @@ class ChildrenTest extends TestCase
     {
         static::assertEquals($expected ?? $data, Options::make($data, $definition));
     }
-
+    
     public function testInvalidChildDefinition(): void
     {
         $this->expectException(InvalidOptionDefinitionException::class);

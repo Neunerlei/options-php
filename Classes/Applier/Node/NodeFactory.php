@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 21:18
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -35,12 +35,12 @@ class NodeFactory
      * @var \Neunerlei\Options\Applier\Type\TypeConverter
      */
     protected $typeConverter;
-
+    
     public function __construct(?TypeConverter $typeConverter = null)
     {
         $this->typeConverter = $typeConverter ?? new TypeConverter();
     }
-
+    
     /**
      * Creates a new node instance based on the given definition
      *
@@ -52,10 +52,10 @@ class NodeFactory
     public function makeNode(Context $context, $definition): Node
     {
         $definition = $this->prepareDefinition($context, $definition);
-
+        
         return $this->applyDefinition(new Node(), $context, $definition);
     }
-
+    
     /**
      * Creates a list of nodes based on the given list of definitions
      *
@@ -67,23 +67,23 @@ class NodeFactory
     public function makeNodeList(Context $context, array $definition): array
     {
         $pathBackup = $context->path;
-
+        
         try {
             $nodes = [];
-
+            
             foreach ($definition as $k => $nodeDefinition) {
-                $context->path   = $pathBackup;
+                $context->path = $pathBackup;
                 $context->path[] = $k;
-
+                
                 $nodes[$k] = $this->makeNode($context, $nodeDefinition);
             }
-
+            
             return $nodes;
         } finally {
             $context->path = $pathBackup;
         }
     }
-
+    
     /**
      * Internal helper which is used to convert the given definition into an array.
      *
@@ -110,7 +110,7 @@ class NodeFactory
                 'An empty array was given as definition. If you want an array as default value make sure to ' .
                 'pass it like: ' . '"key" => [[]] or like "key" => ["default" => []]', $context->path);
         }
-
+        
         // Handle "values" deprecation
         if (isset($definition['values'])) {
             trigger_error(
@@ -118,17 +118,17 @@ class NodeFactory
                 ' is deprecated. Use the "validator" option instead.',
                 E_USER_DEPRECATED
             );
-
+            
             if (! isset($definition['validator'])) {
                 $definition['validator'] = $definition['values'];
             }
-
+            
             unset($definition['values']);
         }
-
+        
         return $definition;
     }
-
+    
     /**
      * Applies the prepared definition on the given node object
      *
@@ -144,10 +144,10 @@ class NodeFactory
         foreach ($definition as $key => $value) {
             switch ($key) {
                 case 'default':
-                    $node->default    = $value;
+                    $node->default = $value;
                     $node->isRequired = false;
                     break;
-
+                
                 case 'type':
                     try {
                         $node->types = $this->typeConverter->convertList($value);
@@ -159,7 +159,7 @@ class NodeFactory
                             'Invalid type definition; ' . $e->getMessage(), $context->path);
                     }
                     break;
-
+                
                 case 'validator':
                     if (! is_callable($value) && ! is_string($value) && ! is_array($value)) {
                         throw new InvalidOptionDefinitionException(
@@ -168,7 +168,7 @@ class NodeFactory
                     }
                     $node->validator = $value;
                     break;
-
+                
                 case 'preFilter':
                 case 'filter':
                     if (! is_callable($value)) {
@@ -177,7 +177,7 @@ class NodeFactory
                     }
                     $node->$key = $value;
                     break;
-
+                
                 case 'children':
                     if (! is_array($value)) {
                         throw new InvalidOptionDefinitionException(
@@ -185,7 +185,7 @@ class NodeFactory
                     }
                     $node->children = $value;
                     break;
-
+                
                 default:
                     throw new InvalidOptionDefinitionException(
                         'Found invalid key: "' . $key
@@ -193,7 +193,7 @@ class NodeFactory
                         $context->path);
             }
         }
-
+        
         return $node;
     }
 }

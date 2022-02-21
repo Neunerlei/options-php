@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.21 at 12:08
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -28,25 +28,25 @@ use Neunerlei\Options\Applier\Node\Node;
 class ValidatorResult
 {
     public const TYPE_INVALID_VALUE = 1;
-    public const TYPE_REGEX         = 2;
-    public const TYPE_GENERIC       = 3;
-    public const TYPE_MESSAGE       = 4;
-    public const TYPE_INVALID_TYPE  = 5;
-
+    public const TYPE_REGEX = 2;
+    public const TYPE_GENERIC = 3;
+    public const TYPE_MESSAGE = 4;
+    public const TYPE_INVALID_TYPE = 5;
+    
     /**
      * The type of result that occurred
      *
      * @var int
      */
     protected $type;
-
+    
     /**
      * The node which triggered the result
      *
      * @var \Neunerlei\Options\Applier\Node\Node
      */
     protected $node;
-
+    
     /**
      * The content of the result, based on the type
      * TYPE_INVALID_VALUE: array the value list to pass to the value validator
@@ -58,22 +58,22 @@ class ValidatorResult
      * @var mixed
      */
     protected $content;
-
+    
     /**
      * The value that failed to validate
      *
      * @var mixed
      */
     protected $value;
-
+    
     public function __construct(int $type, Node $node, $content, $value)
     {
-        $this->type    = $type;
-        $this->node    = $node;
+        $this->type = $type;
+        $this->node = $node;
         $this->content = $content;
-        $this->value   = $value;
+        $this->value = $value;
     }
-
+    
     /**
      * Returns the type of result that occurred
      *
@@ -83,7 +83,7 @@ class ValidatorResult
     {
         return $this->type;
     }
-
+    
     /**
      * Returns the node which triggered the result
      *
@@ -93,7 +93,7 @@ class ValidatorResult
     {
         return $this->node;
     }
-
+    
     /**
      * Returns the content of the result, based on the type
      * TYPE_INVALID_VALUE: array the value list to pass to the value validator
@@ -108,7 +108,7 @@ class ValidatorResult
     {
         return $this->content;
     }
-
+    
     /**
      * Returns the value that failed to be validated
      *

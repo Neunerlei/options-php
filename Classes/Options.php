@@ -1,4 +1,21 @@
 <?php
+/*
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Last modified: 2022.02.21 at 19:13
+ */
 
 declare(strict_types=1);
 
@@ -26,21 +43,21 @@ use Neunerlei\Options\Applier\Applier;
 
 class Options
 {
-
+    
     /**
      * The class that is used when the internal option applier is instantiated
      *
      * @var string
      */
     public static $applierClass = Applier::class;
-
+    
     /**
      * Our internal applier as singleton
      *
      * @var \Neunerlei\Options\Applier\Applier
      */
     protected static $applier;
-
+    
     /**
      * In general, this does exactly the same as Options::make() but is designed to validate non-array options.
      *
@@ -66,12 +83,12 @@ class Options
      */
     public static function makeSingle(string $paramName, $variable, $definition, array $options = [])
     {
-        $list   = is_null($variable) ? [] : [$paramName => $variable];
+        $list = is_null($variable) ? [] : [$paramName => $variable];
         $result = static::getApplier()->apply($list, [$paramName => $definition], $options);
-
+        
         return $result[$paramName];
     }
-
+    
     /**
      * This nifty little helper is used to apply a default definition of options
      * to a given array of options (presumably transferred as a function parameter)
@@ -189,7 +206,7 @@ class Options
     {
         return static::getApplier()->apply($input, $definition, $options);
     }
-
+    
     /**
      * Returns the singleton instance of our internal option applier
      *
@@ -200,7 +217,7 @@ class Options
         if (! empty(static::$applier) && static::$applier instanceof static::$applierClass) {
             return static::$applier;
         }
-
+        
         return static::$applier = new static::$applierClass();
     }
 }

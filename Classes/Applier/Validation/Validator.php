@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 13:34
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -33,12 +33,12 @@ class Validator
      * @var \Neunerlei\Options\Applier\Validation\TypeValidator
      */
     protected $typeValidator;
-
+    
     public function __construct(?TypeValidator $typeValidator = null)
     {
         $this->typeValidator = $typeValidator ?? new TypeValidator();
     }
-
+    
     /**
      * Executes the custom validation of the node's "validator" option
      *
@@ -55,20 +55,20 @@ class Validator
         if ($node->validator === null) {
             return true;
         }
-
+        
         $result = $this->runCallableValidator($context, $node, $key, $value, $list);
         if ($result) {
             return $result;
         }
-
+        
         $result = $this->runRegexValidator($context, $node, $value);
         if ($result) {
             return $result;
         }
-
+        
         return $this->runValueValidator($node, $value);
     }
-
+    
     /**
      * Checks if the registered "type" configuration of the provided node matches with the given value
      *
@@ -82,10 +82,10 @@ class Validator
         if (! isset($node->types) || ($this->typeValidator->isTypeOf($value, $node->types))) {
             return true;
         }
-
+        
         return new ValidatorResult(ValidatorResult::TYPE_INVALID_TYPE, $node, $node->types, $value);
     }
-
+    
     /**
      * Validates that (if callable) the value is valid, or if an array is returned by the validator,
      * that the value validator is executed
@@ -103,24 +103,24 @@ class Validator
         if (! is_callable($node->validator)) {
             return null;
         }
-
+        
         $result = ($node->validator)($value, $key, $list, $node, $context);
-
+        
         if ($result === false) {
             return new ValidatorResult(ValidatorResult::TYPE_GENERIC, $node, null, $value);
         }
-
+        
         if (is_array($result)) {
             return $this->runValueValidator($node, $value, $result);
         }
-
+        
         if (is_string($result)) {
             return new ValidatorResult(ValidatorResult::TYPE_MESSAGE, $node, $result, $value);
         }
-
+        
         return true;
     }
-
+    
     /**
      * Validates the regular
      *
@@ -136,11 +136,11 @@ class Validator
         if (! is_string($node->validator)) {
             return null;
         }
-
+        
         if (@preg_match($node->validator, (string)$value)) {
             return true;
         }
-
+        
         if (preg_last_error()) {
             throw new InvalidOptionDefinitionException(
                 'The given regular expression "' . $node->validator . '" used as validator is invalid. Error: '
@@ -148,10 +148,10 @@ class Validator
                 $context->path
             );
         }
-
+        
         return new ValidatorResult(ValidatorResult::TYPE_REGEX, $node, $node->validator, $value);
     }
-
+    
     /**
      * Validates that the given value is either in the validator array of the node, or given as $valueList
      *
@@ -168,7 +168,7 @@ class Validator
         if (is_array($list) && in_array($value, $list, true)) {
             return true;
         }
-
+        
         return new ValidatorResult(ValidatorResult::TYPE_INVALID_VALUE, $node, $list, $value);
     }
 }

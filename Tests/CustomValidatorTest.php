@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.21 at 13:11
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use PHPUnit\Framework\TestCase;
 
 class CustomValidatorTest extends TestCase
 {
-
+    
     public function provideTestPositiveValidatorResultsData(): array
     {
         return [
@@ -85,7 +85,7 @@ class CustomValidatorTest extends TestCase
             ],
         ];
     }
-
+    
     /**
      * @dataProvider provideTestPositiveValidatorResultsData
      */
@@ -93,7 +93,7 @@ class CustomValidatorTest extends TestCase
     {
         static::assertEquals($data, Options::make($data, $definition));
     }
-
+    
     public function provideTestNegativeValidatorResultsData(): array
     {
         return [
@@ -150,7 +150,7 @@ class CustomValidatorTest extends TestCase
             ],
         ];
     }
-
+    
     /**
      * @dataProvider provideTestNegativeValidatorResultsData
      */
@@ -160,13 +160,13 @@ class CustomValidatorTest extends TestCase
         $this->expectExceptionMessage($error);
         Options::make($data, $definition);
     }
-
+    
     public function testCallbackValidatorParams(): void
     {
         $executed = false;
         Options::make(['foo' => 123], [
             'foo' => [
-                'type'      => 'int',
+                'type' => 'int',
                 'validator' => function ($v, $k, $list, $node, $context) use (&$executed) {
                     $executed = true;
                     static::assertEquals(123, $v);
@@ -176,28 +176,28 @@ class CustomValidatorTest extends TestCase
                     static::assertEquals([ValueTypes::TYPE_INT => 'int'], $node->types);
                     static::assertInstanceOf(Context::class, $context);
                     static::assertEquals(['foo'], $context->path);
-
+                    
                     return true;
                 },
             ],
         ]);
         self::assertTrue($executed);
     }
-
+    
     public function testFailOnInvalidValidator(): void
     {
         $this->expectException(InvalidOptionDefinitionException::class);
         $this->expectExceptionMessage('Definition error at: "foo"; The given validator must either be a callable, array of values or regular expression');
         Options::make(['foo' => '123'], ['foo' => ['validator' => null]]);
     }
-
+    
     public function testFailOnInvalidValidatorRegex(): void
     {
         $this->expectException(InvalidOptionDefinitionException::class);
         $this->expectExceptionMessage('Definition error at: "foo"; The given regular expression "invalidRegex" used as validator is invalid. Error: 1');
         Options::make(['foo' => '123'], ['foo' => ['validator' => 'invalidRegex']]);
     }
-
+    
     public function testDeprecatedValuesUsage(): void
     {
         $this->setupDeprecationHandler($executed);
@@ -205,7 +205,7 @@ class CustomValidatorTest extends TestCase
         restore_error_handler();
         static::assertTrue($executed, 'The error handler did not catch the deprecation warning');
     }
-
+    
     public function testDeprecatedNegativeValuesUsage(): void
     {
         $this->setupDeprecationHandler($executed);
@@ -214,7 +214,7 @@ class CustomValidatorTest extends TestCase
         Options::make(['foo' => 1], ['foo' => ['values' => [123, 234]]]);
         static::assertTrue($executed, 'The error handler did not catch the deprecation warning');
     }
-
+    
     protected function setupDeprecationHandler(&$executed): void
     {
         $dv = ini_get('display_errors');
@@ -224,9 +224,9 @@ class CustomValidatorTest extends TestCase
             static::assertEquals(
                 'The usage of the "values" option at: "foo is deprecated. Use the "validator" option instead.',
                 $msg);
-
+            
             ini_set('DISPLAY_ERRORS', $dv);
-
+            
             return true;
         }, E_USER_DEPRECATED);
     }

@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 13:11
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -35,19 +35,19 @@ class ContextFactory
     public function makeContext(array $options): Context
     {
         $context = new Context();
-
+        
         if (! empty($options['allowUnknown']) || in_array('allowUnknown', $options, true)) {
             $context->allowUnknown = true;
         }
-
+        
         if (! empty($options['ignoreUnknown']) || in_array('ignoreUnknown', $options, true)) {
             $context->ignoreUnknown = true;
         }
-
+        
         if (isset($options['allowBooleanFlags']) && $options['allowBooleanFlags'] === false) {
             $context->allowBooleanFlags = false;
         }
-
+        
         return $context;
     }
 }

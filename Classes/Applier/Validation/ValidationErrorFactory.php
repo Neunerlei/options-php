@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 15:56
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -36,35 +36,35 @@ class ValidationErrorFactory
             $context->path,
             null);
     }
-
+    
     public function makeUnknownKeyError(Context $context, $k, $value, array $nodes): ValidationError
     {
         // If we allow boolean flags we try to make the path a bit more readable
         $readablePath = $context->path;
         if ($context->allowBooleanFlags && is_numeric($k) && is_string($value) && strlen($value) < 100) {
-            $lastPathPart   = array_pop($readablePath);
+            $lastPathPart = array_pop($readablePath);
             $readablePath[] = $value . ' (' . $lastPathPart . ')';
-            $k              = $value;
+            $k = $value;
         }
-
-        $e              = 'Invalid option key: "' . implode('.', $readablePath) . '" given!';
+        
+        $e = 'Invalid option key: "' . implode('.', $readablePath) . '" given!';
         $alternativeKey = $this->getSimilarKey($nodes, (string)$k);
         if (! empty($alternativeKey)) {
             $e .= ' Did you mean: "' . $alternativeKey . '" instead?';
         }
-
+        
         return new ValidationError(ValidationError::TYPE_UNKNOWN_KEY, $e, $context->path, null);
     }
-
+    
     public function makeValidationFailedError(Context $context, ValidatorResult $result): ValidationError
     {
         $message = null;
-
+        
         switch ($result->getType()) {
             case ValidatorResult::TYPE_INVALID_VALUE:
                 $allowedValues = array_map([$this, 'stringifyValue'], $result->getContent());
-                $message       = 'Invalid value "' . $this->stringifyValue($result->getValue()) . '" ' .
-                                 '- Only the following values are allowed: "' . implode('", "', $allowedValues) . '"';
+                $message = 'Invalid value "' . $this->stringifyValue($result->getValue()) . '" ' .
+                           '- Only the following values are allowed: "' . implode('", "', $allowedValues) . '"';
                 break;
             case ValidatorResult::TYPE_REGEX:
                 $message = 'The value did not match the required pattern: "' . $result->getContent() . '"';
@@ -73,29 +73,29 @@ class ValidationErrorFactory
                 $message = $result->getContent();
                 break;
             case ValidatorResult::TYPE_INVALID_TYPE:
-                $type    = strtolower(gettype($result->getValue()));
-                $type    = $type === 'object' ? 'Instance of: ' . get_class($result->getValue()) : $type;
+                $type = strtolower(gettype($result->getValue()));
+                $type = $type === 'object' ? 'Instance of: ' . get_class($result->getValue()) : $type;
                 $message = 'Invalid value type "' . $type
                            . '" given; only values with the following types are allowed: "' .
                            implode('" or "', $result->getNode()->types) . '"';
                 break;
         }
-
+        
         return new ValidationError(ValidationError::TYPE_VALIDATION_FAILED,
             'Validation failed at: "' . implode('.', $context->path) . '"' .
             (empty($message) ? '' : (' - ' . $message)),
             $context->path,
             $result);
     }
-
+    
     public function makeInvalidChildValueError(Context $context, Node $node, $value): ValidationError
     {
         $e = 'Invalid child at path: ' . implode('.', $context->path)
              . ' it has to be an array but is instead: ' . $this->stringifyValue($value);
-
+        
         return new ValidationError(ValidationError::TYPE_INVALID_CHILD_VALUE, $e, $context->path, null, $node);
     }
-
+    
     /**
      * Internal helper which can be used to convert any value into a string representation
      *
@@ -108,26 +108,26 @@ class ValidationErrorFactory
         if ($value === null) {
             return 'NULL';
         }
-
+        
         if (is_string($value) || is_numeric($value)) {
             return $this->cropString((string)$value);
         }
-
+        
         if (is_bool($value)) {
             return $value ? 'TRUE' : 'FALSE';
         }
-
+        
         if (is_object($value)) {
             if (method_exists($value, '__toString')) {
                 return $this->cropString((string)$value);
             }
-
+            
             return 'Object of type: ' . get_class($value);
         }
-
+        
         return 'Value of type: ' . gettype($value);
     }
-
+    
     /**
      * Helper to crop a string to the maximum length
      *
@@ -139,14 +139,14 @@ class ValidationErrorFactory
     protected function cropString(string $value, int $maxLength = 50): string
     {
         $v = trim($value);
-
+        
         if (strlen($v) <= $maxLength) {
             return $v;
         }
-
+        
         return trim(substr($v, 0, $maxLength)) . '...';
     }
-
+    
     /**
      * Searches the most similar key to the given needle from the haystack
      *
@@ -159,7 +159,7 @@ class ValidationErrorFactory
     {
         // Generate alternative keys
         $alternativeKeys = array_keys($haystack);
-
+        
         // Search for a similar key
         $similarKeys = [];
         foreach ($alternativeKeys as $alternativeKey) {
@@ -167,13 +167,13 @@ class ValidationErrorFactory
             $similarKeys[(int)ceil($percent)] = $alternativeKey;
         }
         ksort($similarKeys);
-
+        
         // Check for empty keys
         if (empty($similarKeys)) {
             return null;
         }
-
+        
         return array_pop($similarKeys);
     }
-
+    
 }

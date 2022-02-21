@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 20:46
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -34,12 +34,12 @@ class InitializationPass
      * @var \Neunerlei\Options\Applier\Validation\ValidationErrorFactory
      */
     protected $errorFactory;
-
+    
     public function __construct(?ValidationErrorFactory $errorFactory = null)
     {
         $this->errorFactory = $errorFactory ?? new ValidationErrorFactory();
     }
-
+    
     /**
      * Prepares the given $list by validating required keys and rewriting boolean flags to their actual mapping
      *
@@ -54,24 +54,24 @@ class InitializationPass
         $pathBackup = $context->path;
         try {
             foreach ($nodes as $key => $node) {
-                $context->path   = $pathBackup;
+                $context->path = $pathBackup;
                 $context->path[] = $key;
-
+                
                 $list = $this->rewriteBooleanFlagOf($node, $key, $list);
-
+                
                 if (array_key_exists($key, $list)) {
                     continue;
                 }
-
+                
                 $list = $this->applyDefaultsFor($context, $node, $key, $list);
             }
-
+            
             return $list;
         } finally {
             $context->path = $pathBackup;
         }
     }
-
+    
     /**
      * Rewrites the numerically keyed "booleanFlags" to a "key/value" mapping.
      *
@@ -86,16 +86,16 @@ class InitializationPass
         if (! $node->canBeBooleanFlag) {
             return $list;
         }
-
+        
         $flagKey = array_search($key, $list, true);
         if (is_numeric($flagKey)) {
             $list[$key] = $list[$key] ?? true;
             unset($list[$flagKey]);
         }
-
+        
         return $list;
     }
-
+    
     /**
      * Is called to apply the default values for a missing key in the given $list
      *
@@ -110,16 +110,16 @@ class InitializationPass
     {
         if ($node->isRequired) {
             $context->errors[] = $this->errorFactory->makeMissingRequiredKeyError($context);
-
+            
             return $list;
         }
-
+        
         if ($node->default instanceof Closure) {
             $list[$key] = call_user_func($node->default, $key, $list, $node, $context);
         } else {
             $list[$key] = $node->default;
         }
-
+        
         return $list;
     }
 }

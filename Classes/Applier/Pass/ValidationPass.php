@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright 2022 LABOR.digital
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2022.02.20 at 20:50
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -35,18 +35,18 @@ class ValidationPass
      * @var \Neunerlei\Options\Applier\Validation\Validator
      */
     protected $validator;
-
+    
     /**
      * @var \Neunerlei\Options\Applier\Validation\ValidationErrorFactory
      */
     protected $errorFactory;
-
+    
     public function __construct(?Validator $validator = null, ?ValidationErrorFactory $errorFactory = null)
     {
-        $this->validator    = $validator ?? new Validator();
+        $this->validator = $validator ?? new Validator();
         $this->errorFactory = $errorFactory ?? new ValidationErrorFactory();
     }
-
+    
     /**
      * Executes all major validation steps based on the given $list of values
      *
@@ -62,45 +62,45 @@ class ValidationPass
         $pathBackup = $context->path;
         try {
             foreach ($list as $key => $value) {
-                $context->path   = $pathBackup;
+                $context->path = $pathBackup;
                 $context->path[] = $key;
-
+                
                 if (! isset($nodes[$key])) {
                     $list = $this->handleUnknownValue($context, $key, $value, $list, $nodes);
                     continue;
                 }
-
+                
                 $node = $nodes[$key];
-
+                
                 $list[$key] = $value = $this->runFilter('preFilter', $key, $value, $context, $node, $list);
-
+                
                 $vRes = $this->validator->validateType($node, $value);
                 if ($vRes instanceof ValidatorResult) {
                     $context->errors[] = $this->errorFactory->makeValidationFailedError($context, $vRes);
                     continue;
                 }
-
+                
                 $list[$key] = $value = $this->runFilter('filter', $key, $value, $context, $node, $list);
-
+                
                 $vRes = $this->validator->validate($context, $node, $key, $value, $list);
                 if ($vRes instanceof ValidatorResult) {
                     $context->errors[] = $this->errorFactory->makeValidationFailedError($context, $vRes);
                     continue;
                 }
-
+                
                 if (isset($node->children) && is_array($value)) {
                     $list[$key] = $childHandler($context, $node, $value);
                 }
             }
-
+            
             return $list;
-
+            
         } finally {
             $context->path = $pathBackup;
         }
     }
-
-
+    
+    
     /**
      * Handles the resolution of unknown values based on the current context settings
      *
@@ -117,18 +117,18 @@ class ValidationPass
         if ($context->allowUnknown) {
             return $list;
         }
-
+        
         if ($context->ignoreUnknown) {
             unset($list[$k]);
-
+            
             return $list;
         }
-
+        
         $context->errors[] = $this->errorFactory->makeUnknownKeyError($context, $k, $value, $nodes);
-
+        
         return $list;
     }
-
+    
     /**
      * Helper to execute either the "filter" or the "preFilter" callables
      *
@@ -146,7 +146,7 @@ class ValidationPass
         if (! isset($node->$type)) {
             return $value;
         }
-
+        
         return ($node->$type)($value, $key, $list, $node, $context);
     }
 }

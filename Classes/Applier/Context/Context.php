@@ -1,6 +1,6 @@
 <?php
-/**
- * Copyright 2020 Martin Neundorfer (Neunerlei)
+/*
+ * Copyright 2022 Martin Neundorfer (Neunerlei)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Last modified: 2020.02.27 at 10:57
+ * Last modified: 2022.02.21 at 19:13
  */
 
 declare(strict_types=1);
@@ -29,28 +29,28 @@ class Context
      * @var \Neunerlei\Options\Applier\Validation\ValidationError[]
      */
     public $errors = [];
-
+    
     /**
      * Defines the path through the given input array
      *
      * @var array
      */
     public $path = [];
-
+    
     /**
      * True if the "allowUnknown" option was set to true
      *
      * @var bool
      */
     public $allowUnknown = false;
-
+    
     /**
      * True if the "ignoreUnknown" option was set to true
      *
      * @var bool
      */
     public $ignoreUnknown = false;
-
+    
     /**
      * True as long "allowBooleanFlags" was not set to false
      *
